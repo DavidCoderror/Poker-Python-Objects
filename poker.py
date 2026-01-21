@@ -37,6 +37,7 @@ class Deck:
 
 
 # -------------------------------------------------------------# -------------------------------------------------------------
+# Player Class
 class Player:
     def __init__(self):  # A player holds a deck
         self.playerDeck = []
@@ -47,6 +48,26 @@ class Player:
 
 
 # -------------------------------------------------------------# -------------------------------------------------------------
+# Table Class
+class Table:
+    def __init__(self):
+        self.tableDeck = []
+
+    def setupTable(self, MainDeck):
+
+        try:
+            while len(self.tableDeck) < 3:  # Create the 3 Cards starting
+                self.receiveCard(MainDeck)
+        except:
+            print("Tabel Setup has encountered an issue")
+
+    def receiveCard(self, MainDeck):  # Grab a card from MAIN deck and add to Table deck
+        newCard = MainDeck.cardDeck.pop()
+        self.tableDeck.append(newCard)
+
+
+# -------------------------------------------------------------# -------------------------------------------------------------
+
 # Create the deck
 deck = Deck()
 
@@ -58,5 +79,18 @@ computer = Player()
 computer.receiveCard(deck)
 computer.receiveCard(deck)
 
-for card in computer.playerDeck:
+human = Player()
+human.receiveCard(deck)
+human.receiveCard(deck)
+
+# for card in computer.playerDeck:
+# print(card)
+
+# for card in human.playerDeck:
+# print(card)
+
+table = Table()
+table.setupTable(deck)
+
+for card in table.tableDeck:
     print(card)

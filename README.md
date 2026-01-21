@@ -1,5 +1,7 @@
 1st Update: Created Main Deck and able to print all
 
-2nd Update: Create Player Class and be able to print deck
+2nd Update: Created Player Class and be able to print deck
 
-3rd Update: Create Table Class and is able to print Table and do setup
+3rd Update: Created Table Class and is able to print Table and do setup
+
+4th Update: Created Game Class and is able to show crads being impleemnt to table. Gotta Figure out a plan here to combine decks

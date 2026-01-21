@@ -1,6 +1,7 @@
 # Imports
 import random
 
+
 # -------------------------------------------------------------# -------------------------------------------------------------
 # Card Class
 class Card:
@@ -38,8 +39,9 @@ class Deck:
 # -------------------------------------------------------------# -------------------------------------------------------------
 # Player Class
 class Player:
-    def __init__(self):  # A player holds a deck
+    def __init__(self, name):  # A player holds a deck
         self.playerDeck = []
+        self.playerName = name
 
     def receiveCard(self, MainDeck):  # Grab a card from MAIN deck and add to PLAYER deck
         newCard = MainDeck.cardDeck.pop()
@@ -55,7 +57,7 @@ class Table:
     def setupTable(self, MainDeck):
 
         try:
-            while len(self.tableDeck) < 3:  # Create the 3 Cards starting
+            while len(self.tableDeck) < 3:  # Create the 3 Starting Cards
                 self.receiveCard(MainDeck)
         except:
             print("Tabel Setup has encountered an issue")
@@ -66,30 +68,63 @@ class Table:
 
 
 # -------------------------------------------------------------# -------------------------------------------------------------
+class Game:  # The actual Game and Rounds
+    def __init__(self, playerNames):
+        self.deck = Deck()
+        self.table = Table()
+        self.players = []
+        self.round = 0
 
-# Create the deck
-deck = Deck()
+        for name in playerNames:
+            self.players.append(name)
 
-# Print all cards
-# for card in deck.cardDeck:
-# print(card)  # Uses the __str__ we defined in Card
+    def startGame(self):
+        for player in self.players:  # Players Get their 2 intial Cards
+            player.receiveCard(self.deck)
+            player.receiveCard(self.deck)
 
-computer = Player()
-computer.receiveCard(deck)
-computer.receiveCard(deck)
+        self.table.setupTable(self.deck)  # Table gets their Cards
+        self.currentState()
 
-human = Player()
-human.receiveCard(deck)
-human.receiveCard(deck)
+        self.roundCounter()  # Round UI ----- Round 1
+        self.table.receiveCard(self.deck)
+        self.currentState()
 
-# for card in computer.playerDeck:
-# print(card)
+        self.roundCounter()  # Round UI ----- Round 2
+        self.table.receiveCard(self.deck)
+        self.currentState()
 
-# for card in human.playerDeck:
-# print(card)
+        self.roundCounter()  # Round UI ----- Round 3
+        self.table.receiveCard(self.deck)
+        self.currentState()
 
-table = Table()
-table.setupTable(deck)
 
-for card in table.tableDeck:
-    print(card)
+    def currentState(self):  # We Show The Cards
+        print("--------Table------")  # Table UI
+        for card in self.table.tableDeck:
+            print(card)
+
+        print("------Players------")  # Players UI
+        for player in self.players:
+            print(player.playerName)
+
+            for card in player.playerDeck:
+                print(card)
+
+    def roundCounter(self): # Round Console UI
+        self.round += 1
+        print("**************")
+        print(f"Round : {self.round}")
+        print("**************")
+
+
+# -------------------------------------------------------------# -------------------------------------------------------------
+# MAIN
+
+computer = Player("Computer")
+Human = Player("David")
+
+PlayerList = [computer, Human]
+Poker = Game(PlayerList)
+
+Poker.startGame()

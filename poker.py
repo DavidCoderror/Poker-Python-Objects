@@ -74,30 +74,33 @@ class Game:  # The actual Game and Rounds
         self.table = Table()
         self.players = []
         self.round = 0
+        self.fold = False
 
         for name in playerNames:
             self.players.append(name)
 
     def startGame(self):
-        for player in self.players:  # Players Get their 2 intial Cards
+        # -------------------------------------------------------------------- Setup
+        for player in self.players:  # Players Get their 2 initial Cards
             player.receiveCard(self.deck)
             player.receiveCard(self.deck)
 
         self.table.setupTable(self.deck)  # Table gets their Cards
         self.currentState()
 
-        self.roundCounter()  # Round UI ----- Round 1
-        self.table.receiveCard(self.deck)
-        self.currentState()
+        # -------------------------------------------------------------------- Start of Actual Game
+        while self.round < 3 and self.fold is not True:  # Round System
+            self.roundCounter()  # Round UI ----- Round 1
+            self.table.receiveCard(self.deck)
+            self.currentState()
+            playerResponse = self.askPlayerToContinue()
 
-        self.roundCounter()  # Round UI ----- Round 2
-        self.table.receiveCard(self.deck)
-        self.currentState()
-
-        self.roundCounter()  # Round UI ----- Round 3
-        self.table.receiveCard(self.deck)
-        self.currentState()
-
+            if playerResponse == 1:
+                pass
+            elif playerResponse == 2:
+                print("Folded!!")
+                break
+        #-------------------------------------------------------------------- End of Actual Game
 
     def currentState(self):  # We Show The Cards
         print("--------Table------")  # Table UI
@@ -111,20 +114,35 @@ class Game:  # The actual Game and Rounds
             for card in player.playerDeck:
                 print(card)
 
-    def roundCounter(self): # Round Console UI
+    def roundCounter(self):  # Round Console UI
         self.round += 1
         print("**************")
         print(f"Round : {self.round}")
         print("**************")
 
+    def winner(self):  # Determines who won
+        pass
+
+    def askPlayerToContinue(self):
+        acceptableAnswer = True
+        while acceptableAnswer:
+            answer = int(input("Do you want to Continue (1) or Fold(2)? : "))
+
+            if answer == 1:
+                return 1
+            elif answer == 2:
+                return 2
+            else:
+                acceptableAnswer = False
 
 # -------------------------------------------------------------# -------------------------------------------------------------
 # MAIN
 
+# Player List
 computer = Player("Computer")
 Human = Player("David")
-
 PlayerList = [computer, Human]
-Poker = Game(PlayerList)
 
+# Game Class
+Poker = Game(PlayerList)
 Poker.startGame()

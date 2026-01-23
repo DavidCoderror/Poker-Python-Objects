@@ -7,3 +7,5 @@
 4th Update: Created Game Class and is able to show crads being impleemnt to table. Gotta Figure out a plan here to combine decks
 
 5th Update: Made more methods for Game Class
+
+6th Update: Checking deck values

@@ -9,3 +9,5 @@
 5th Update: Made more methods for Game Class
 
 6th Update: Checking deck values
+
+7th Update: added Straight, Straight Flush and Royal Flush (Still need to check if it works)

@@ -135,11 +135,11 @@ class Game:  # The actual Game and Rounds
 
             # 1 Royal Flush
             # if (True):
-            # pass
+            # royalFlushCheck(deck)
 
             # 2 Straight Flush
             # elif (True):
-            # pass
+            # straightFlushCheck(deck)
 
             # 3 Four of a kind
             # elif (True):
@@ -155,7 +155,7 @@ class Game:  # The actual Game and Rounds
 
             # 6 Straight
             # elif (True):
-            # pass
+            # self.staightCheck(deck)
 
             # 7 Three of a kind
             # elif (True):
@@ -205,31 +205,115 @@ class Game:  # The actual Game and Rounds
 
         for card in deck:
             if cardsChecked.count(card.value) == 0:  # To make we don't count twice the same card
-                countOfCard = deck.count(card.value) # Check count of card and store it in var
+                countOfCard = deck.count(card.value)  # Check count of card and store it in var
 
-                if countOfCard == 2:    # Check amount
-                    countOfPairs += 1   # Add to the counter
+                if countOfCard == 2:  # Check amount
+                    countOfPairs += 1  # Add to the counter
 
             cardsChecked.append(card.value)  # Add the card to the list that we already checked
 
         if countOfPairs == 2:
             return True
 
-    def flushCheck(self,deck): # Check Flushes
+    def flushCheck(self, deck):  # Check Flushes
         for card in deck:
             countOfCard = deck.count(card.suit)
 
             if countOfCard == 5:
                 return True
 
+    def staightCheck(self, deck):  # Check if deck contains straight
+        count = 1
+        previousCardValue = 0
+        for card in deck:
+            if previousCardValue == 0:  # Move past from  first card
+                previousCardValue = card.value
+            else:
+                if card.value == previousCardValue:  # if card is same value
+                    pass
+
+                elif card.value == previousCardValue + 1:  # if card is one higher than next
+                    count += 1
+                    previousCardValue = card.value
+                    if count == 5:  # If there are 5 cards in a row higher than 1
+                        return True
+
+                else:  # if not higher than 1, reset count variable
+                    count = 1
+                    previousCardValue = card.value
+
+    def straightFlushCheck(self, deck):  # Check if deck contains straight which is also a flush
+        count = 1
+        previousCardValue = 0
+        previousCardValueSuit = 0
+
+        for card in deck:
+            if previousCardValue == 0:  # Move past from  first card
+                previousCardValue = card.value
+                previousCardValueSuit = card.suit
+            else:
+                if card.value == previousCardValue:  # if card is same value
+                    pass
+
+                elif card.value == previousCardValue + 1 and card.suit == previousCardValueSuit:  # if card is one higher than next one and same suit
+                    count += 1
+                    previousCardValue = card.value
+                    previousCardValueSuit = card.suit
+
+                    if count == 5:  # If there are 5 cards in a row higher than 1
+                        return True
+                else:  # if not higher than 1, reset count variable
+                    count = 1
+                    previousCardValue = card.value
+                    previousCardValueSuit = card.suit
+
+        return False
+
+    def royalFlushCheck(self, deck):
+        count = 0
+        cardSuit = ""
+
+        if self.flushCheck(deck):  # Check to see if there is a flush to begin with
+            return False
+
+        elif self.staightCheck(deck):  # Check to se if there is a straight to begin with
+            return False
+
+        else:
+            for card in deck:
+                if card.value == 10:
+                    count += 1
+                    cardSuit = card.suit  # Make this the standard
+
+                if card.value == 11:
+                    if cardSuit is not card.suit:
+                        return False
+                    count += 1
+
+                if card.value == 12:
+                    if cardSuit is not card.suit:
+                        return False
+                    count += 1
+
+                if card.value == 13:
+                    if cardSuit is not card.suit:
+                        return False
+                    count += 1
+
+                if card.value == 14:
+                    if cardSuit is not card.suit:
+                        return False
+                    count += 1
 
 # -------------------------------------------------------------# -------------------------------------------------------------
+
+
 # MAIN
 
 # Player List
-computer = Player("Computer")
+Computer = Player("Computer")
 Human = Player("David")
-PlayerList = [computer, Human]
+PlayerList = [Computer, Human]
 
 # Game Class
 Poker = Game(PlayerList)

@@ -10,4 +10,6 @@
 
 6th Update: Checking deck values
 
-7th Update: added Straight, Straight Flush and Royal Flush (Still need to check if it works)
+7th Update: Added Straight, Straight Flush and Royal Flush (Still need to check if it works)
+
+8th Update: Reworked straights to align with special Rules attached to Aces and etc.... 

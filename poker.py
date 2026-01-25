@@ -72,6 +72,7 @@ class Table:
 
 
 # -------------------------------------------------------------# -------------------------------------------------------------
+# Game Class
 class Game:  # The actual Game and Rounds
     def __init__(self, playerNames):
         self.deck = Deck()
@@ -132,46 +133,47 @@ class Game:  # The actual Game and Rounds
     def winner(self):  # Determines who won
         for player in self.players:
             deck = player.playerDeck
+            deckValue = 0
 
             # 1 Royal Flush
-            # if (True):
-            # royalFlushCheck(deck)
+            if self.royalFlushCheck(deck):
+                deckValue = 1
 
             # 2 Straight Flush
-            # elif (True):
-            # straightFlushCheck(deck)
+            elif self.straightFlushCheck(deck):
+                deckValue = 2
 
             # 3 Four of a kind
-            # elif (True):
-            # self.countCards(deck,4)
+            elif self.countCards(deck, 4):
+                deckValue = 3
 
             # 4 Full House
-            # elif (True):
-            # self.countCards(deck,2) and self.countCards(deck,3)
+            elif self.countCards(deck, 2) and self.countCards(deck, 3):
+                deckValue = 4
 
             # 5 Flush
-            # elif (True):
-            # flushCheck(deck)
+            elif self.flushCheck(deck):
+                deckValue = 5
 
             # 6 Straight
-            # elif (True):
-            # self.staightCheck(deck)
+            elif self.staightCheck(deck):
+                deckValue = 6
 
             # 7 Three of a kind
-            # elif (True):
-            # self.countCards(deck,3)
+            elif self.countCards(deck, 3):
+                deckValue = 7
 
             # 8 Two Pairs
-            # elif (True):
-            # self.countDoublePair(deck)
+            elif self.countDoublePair(deck):
+                deckValue = 8
 
             # 9 One Pair
-            # if (True) :
-            # self.countCards(deck,2)
+            elif self.countCards(deck, 2):
+                deckValue = 9
 
             # 10 Highcard
             # else:
-            # pass
+            #   deckValue = 10
 
     def askPlayerToContinue(self):
         acceptableAnswer = True
@@ -225,7 +227,14 @@ class Game:  # The actual Game and Rounds
     def staightCheck(self, deck):  # Check if deck contains straight
         count = 1
         previousCardValue = 0
-        for card in deck:
+        functionDeck = deck
+
+        for card in functionDeck:  # Ace counts as both value 1 and 14
+            if card.value == 14:
+                addNewAce = Card(1, card.suit, "🂾")
+                functionDeck.append(addNewAce)
+
+        for card in functionDeck:
             if previousCardValue == 0:  # Move past from  first card
                 previousCardValue = card.value
             else:
@@ -245,9 +254,16 @@ class Game:  # The actual Game and Rounds
     def straightFlushCheck(self, deck):  # Check if deck contains straight which is also a flush
         count = 1
         previousCardValue = 0
-        previousCardValueSuit = 0
+        previousCardValueSuit = ""
 
-        for card in deck:
+        functionDeck = deck
+
+        for card in functionDeck:  # Ace counts as both value 1 and 14
+            if card.value == 14:
+                addNewAce = Card(1, card.suit, "🂾")
+                functionDeck.append(addNewAce)
+
+        for card in functionDeck:  # Straight Check
             if previousCardValue == 0:  # Move past from  first card
                 previousCardValue = card.value
                 previousCardValueSuit = card.suit
@@ -262,6 +278,7 @@ class Game:  # The actual Game and Rounds
 
                     if count == 5:  # If there are 5 cards in a row higher than 1
                         return True
+
                 else:  # if not higher than 1, reset count variable
                     count = 1
                     previousCardValue = card.value
@@ -304,6 +321,10 @@ class Game:  # The actual Game and Rounds
                     if cardSuit is not card.suit:
                         return False
                     count += 1
+
+        if count == 5:
+            return True
+
 
 # -------------------------------------------------------------# -------------------------------------------------------------
 

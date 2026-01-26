@@ -15,3 +15,5 @@
 8th Update: Reworked straights to align with special Rules attached to Aces and etc.... 
 
 9th Update: Fixed Straights and reworked logic
+
+10th Update: Reworking Deckcheck method due to not working, LOTS OF ISSUES

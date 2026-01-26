@@ -36,7 +36,7 @@ class Deck:
         random.shuffle(self.cardDeck)
 
     def sortDeck(self):
-        self.cardDeck.sort(self)
+        self.cardDeck.sort()
 
 
 # -------------------------------------------------------------# -------------------------------------------------------------
@@ -45,6 +45,7 @@ class Player:
     def __init__(self, name):  # A player holds a deck
         self.playerDeck = []
         self.playerName = name
+        self.playerDeckValue = 0
 
     def receiveCard(self, MainDeck):  # Grab a card from MAIN deck and add to PLAYER deck
         newCard = MainDeck.cardDeck.pop()
@@ -81,7 +82,7 @@ class Game:  # The actual Game and Rounds
         self.round = 0
         self.fold = False
 
-        for name in playerNames:
+        for name in playerNames:  # Add players to the list
             self.players.append(name)
 
     def startGame(self):
@@ -130,70 +131,47 @@ class Game:  # The actual Game and Rounds
         print(f"Round : {self.round}")
         print("**************")
 
-    def winner(self):  # Determines who won
-        for player in self.players:
-            deck = player.playerDeck
-            deckValue = 0
-
-            # 1 Royal Flush
-            if self.royalFlushCheck(deck):
-                deckValue = 1
-
-            # 2 Straight Flush
-            elif self.straightFlushCheck(deck):
-                deckValue = 2
-
-            # 3 Four of a kind
-            elif self.countCards(deck, 4):
-                deckValue = 3
-
-            # 4 Full House
-            elif self.countCards(deck, 2) and self.countCards(deck, 3):
-                deckValue = 4
-
-            # 5 Flush
-            elif self.flushCheck(deck):
-                deckValue = 5
-
-            # 6 Straight
-            elif self.staightCheck(deck):
-                deckValue = 6
-
-            # 7 Three of a kind
-            elif self.countCards(deck, 3):
-                deckValue = 7
-
-            # 8 Two Pairs
-            elif self.countDoublePair(deck):
-                deckValue = 8
-
-            # 9 One Pair
-            elif self.countCards(deck, 2):
-                deckValue = 9
-
-            # 10 Highcard
-            # else:
-            #   deckValue = 10
-
-    def askPlayerToContinue(self):
-        acceptableAnswer = True
-        while acceptableAnswer:
-            answer = int(input("Do you want to Continue (1) or Fold(2)? : "))
-
-            if answer == 1:
-                return 1
-            elif answer == 2:
-                return 2
-            else:
-                acceptableAnswer = False
-
-    def putTableAndPlayerCardsTogheter(self):
-        for player in self.players:
-            for tableCard in self.table.tableDeck:
-                player.playerDeck.append(tableCard)  # Gets the table Cards added
-                player.playerDeck.sort(key=lambda card: card.value)  # We sort the new Card
+    # -------------------------------------------------------------------- We check the winner!
+    def checkWinner(self):
+        pass
 
     # -------------------------------------------------------------------- Deck Check!
+
+    def checkDeckValues(self):  # Checks Values of Deck of players (Scores from 1-10) 1 = Highest 10 = Lowest
+        for player in self.players:
+            deck = player.playerDeck
+            self.putTableAndPlayerCardsTogether()
+
+            if self.royalFlushCheck(deck):  # 1 Royal Flush
+                player.playerDeckValue = 1
+
+            elif self.straightFlushCheck(deck):  # 2 Straight Flush
+                player.playerDeckValue = 2
+
+            elif self.countCards(deck, 4):  # 3 Four of a kind
+                player.playerDeckValue = 3
+
+            elif self.countCards(deck, 2) and self.countCards(deck, 3):  # 4 Full House
+                player.playerDeckValue = 4
+
+            elif self.flushCheck(deck):  # 5 Flush
+                player.playerDeckValue = 5
+
+            elif self.staightCheck(deck):  # 6 Straight
+                player.playerDeckValue = 6
+
+            elif self.countCards(deck, 3):  # 7 Three of a kind
+                player.playerDeckValue = 7
+
+            elif self.countDoublePair(deck):  # 8 Two Pairs
+                player.playerDeckValue = 8
+
+            elif self.countCards(deck, 2):  # 9 One Pair
+                player.playerDeckValue = 9
+
+            # else: # 10 High-card
+            #    player.playerDeckValue = 10
+
     def countCards(self, deck, number):  # pairs,Three, four
         for card in deck:
             countOfCard = deck.count(card.value)
@@ -233,6 +211,7 @@ class Game:  # The actual Game and Rounds
             if card.value == 14:
                 addNewAce = Card(1, card.suit, "🂾")
                 functionDeck.append(addNewAce)
+                functionDeck.sort(card.value)
 
         for card in functionDeck:
             if previousCardValue == 0:  # Move past from  first card
@@ -262,6 +241,7 @@ class Game:  # The actual Game and Rounds
             if card.value == 14:
                 addNewAce = Card(1, card.suit, "🂾")
                 functionDeck.append(addNewAce)
+                functionDeck.sort(card.value)
 
         for card in functionDeck:  # Straight Check
             if previousCardValue == 0:  # Move past from  first card
@@ -303,31 +283,50 @@ class Game:  # The actual Game and Rounds
                     cardSuit = card.suit  # Make this the standard
 
                 if card.value == 11:
-                    if cardSuit is not card.suit:
-                        return False
-                    count += 1
+                    if cardSuit == card.suit:
+                        count += 1
 
                 if card.value == 12:
                     if cardSuit is not card.suit:
-                        return False
-                    count += 1
+                        if cardSuit == card.suit:
+                            count += 1
 
                 if card.value == 13:
                     if cardSuit is not card.suit:
-                        return False
-                    count += 1
+                        if cardSuit == card.suit:
+                            count += 1
 
                 if card.value == 14:
-                    if cardSuit is not card.suit:
-                        return False
-                    count += 1
+                    if cardSuit == card.suit:
+                        count += 1
 
         if count == 5:
             return True
+        else:
+            return False
+
+    # -------------------------------------------------------------------- Extra
+
+    def askPlayerToContinue(self):
+        acceptableAnswer = True
+        while acceptableAnswer:
+            answer = int(input("Do you want to Continue (1) or Fold(2)? : "))
+
+            if answer == 1:
+                return 1
+            elif answer == 2:
+                return 2
+            else:
+                acceptableAnswer = False
+
+    def putTableAndPlayerCardsTogether(self):
+        for player in self.players:
+            for tableCard in self.table.tableDeck:
+                player.playerDeck.append(tableCard)  # Gets the table Cards added
+                player.playerDeck.sort(key=lambda card: card.value)  # We sort the new Card
 
 
 # -------------------------------------------------------------# -------------------------------------------------------------
-
 
 # MAIN
 

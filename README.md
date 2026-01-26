@@ -13,3 +13,5 @@
 7th Update: Added Straight, Straight Flush and Royal Flush (Still need to check if it works)
 
 8th Update: Reworked straights to align with special Rules attached to Aces and etc.... 
+
+9th Update: Fixed Straights and reworked logic

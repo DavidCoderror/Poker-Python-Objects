@@ -100,7 +100,7 @@ class Game:  # The actual Game and Rounds
             pass
         else:
             # -------------------------------------------------------------------- Start of Actual Game
-            while self.round < 3 and self.fold is not True:  # Round System
+            while self.round < 2 and self.fold is not True:  # Round System
                 self.roundCounter()  # Round UI ----- Round 1
                 self.table.receiveCard(self.deck)
                 self.currentState()
@@ -111,7 +111,8 @@ class Game:  # The actual Game and Rounds
                 elif playerResponse == 2:
                     print("Folded!!")
                     break
-            # -------------------------------------------------------------------- End of Actual Game
+        self.checkWinner()
+        # -------------------------------------------------------------------- End of Actual Game
 
     def currentState(self):  # We Show The Cards
         print("--------Table------")  # Table UI
@@ -133,14 +134,31 @@ class Game:  # The actual Game and Rounds
 
     # -------------------------------------------------------------------- We check the winner!
     def checkWinner(self):
-        pass
+        self.checkDeckValues()  # Check Decks
+        player1 = self.players[0]
+        player2 = self.players[1]
 
-    # -------------------------------------------------------------------- Deck Check!
+        # Player 1 < Player 2 - Human Higher
+        if player1.playerDeckValue > player2.playerDeckValue:
+            print("Victory Royale : " + player1.playerName + " : " + str(
+                player1.playerDeckValue) + " - Other Dude : " + str(player1.playerDeckValue))
+
+        # Player 1 > Player 2 - Bot Higher
+        elif player1.playerDeckValue < player2.playerDeckValue:
+            print("Victory Royale : " + player2.playerName + " : " + str(
+                player2.playerDeckValue) + " - Other Dude : " + str(player1.playerDeckValue))
+
+        # Player 1 = Player 2 - No-One Wins
+        else:
+            print("Tie")
+        # -------------------------------------------------------------------- Deck Check!
 
     def checkDeckValues(self):  # Checks Values of Deck of players (Scores from 1-10) 1 = Highest 10 = Lowest
+
         for player in self.players:
-            deck = player.playerDeck
-            self.putTableAndPlayerCardsTogether()
+
+            deck = player.playerDeck + self.table.tableDeck
+            deck.sort(key=lambda card: card.value)  # We sort the new Card
 
             if self.royalFlushCheck(deck):  # 1 Royal Flush
                 player.playerDeckValue = 1
@@ -169,49 +187,60 @@ class Game:  # The actual Game and Rounds
             elif self.countCards(deck, 2):  # 9 One Pair
                 player.playerDeckValue = 9
 
-            # else: # 10 High-card
-            #    player.playerDeckValue = 10
+            else:  # 10 High-card
+                player.playerDeckValue = 10
 
     def countCards(self, deck, number):  # pairs,Three, four
-        for card in deck:
-            countOfCard = deck.count(card.value)
+        values = [card.value for card in deck]
 
-            if countOfCard == number:
+        for value in values:
+            count = values.count(value)
+            if count == number:
                 return True
+        return False
 
     def countDoublePair(self, deck):  # Double Pair
         countOfPairs = 0
+        values = [card.value for card in deck]
         cardsChecked = []
 
-        for card in deck:
-            if cardsChecked.count(card.value) == 0:  # To make we don't count twice the same card
-                countOfCard = deck.count(card.value)  # Check count of card and store it in var
+        for value in values:
+            count = values.count(value)
 
-                if countOfCard == 2:  # Check amount
-                    countOfPairs += 1  # Add to the counter
+            if value not in cardsChecked:  # Check if card already in deck
+                if count == 2:
+                    countOfPairs += 1
+                    cardsChecked.append(value)  # Add to list to get marked that we checked
 
-            cardsChecked.append(card.value)  # Add the card to the list that we already checked
+        return countOfPairs == 2
 
-        if countOfPairs == 2:
-            return True
+
 
     def flushCheck(self, deck):  # Check Flushes
-        for card in deck:
-            countOfCard = deck.count(card.suit)
+        suits = [card.suit for card in deck]  # List of Suits
 
-            if countOfCard == 5:
+        for suit in suits:  # For suits in Suit
+            if suits.count(suit) >= 5:
                 return True
+        return False
+
 
     def staightCheck(self, deck):  # Check if deck contains straight
         count = 1
         previousCardValue = 0
         functionDeck = deck
 
+        aDetected = 0
+        aSuit = ""
         for card in functionDeck:  # Ace counts as both value 1 and 14
             if card.value == 14:
-                addNewAce = Card(1, card.suit, "🂾")
-                functionDeck.append(addNewAce)
-                functionDeck.sort(card.value)
+                aDetected = 1
+                aSuit = card.suit
+
+        if aDetected == 1:
+            addNewAce = Card(1, aSuit, "🂾")
+            functionDeck.append(addNewAce)
+            functionDeck.sort(key=lambda card: card.value)
 
         for card in functionDeck:
             if previousCardValue == 0:  # Move past from  first card
@@ -224,11 +253,15 @@ class Game:  # The actual Game and Rounds
                     count += 1
                     previousCardValue = card.value
                     if count == 5:  # If there are 5 cards in a row higher than 1
+                        functionDeck.remove(functionDeck[0])
                         return True
 
                 else:  # if not higher than 1, reset count variable
                     count = 1
                     previousCardValue = card.value
+
+        functionDeck.remove(functionDeck[0])
+        return False
 
     def straightFlushCheck(self, deck):  # Check if deck contains straight which is also a flush
         count = 1
@@ -237,11 +270,17 @@ class Game:  # The actual Game and Rounds
 
         functionDeck = deck
 
+        aDetected = 0
+        aSuit = ""
         for card in functionDeck:  # Ace counts as both value 1 and 14
             if card.value == 14:
-                addNewAce = Card(1, card.suit, "🂾")
-                functionDeck.append(addNewAce)
-                functionDeck.sort(card.value)
+                aDetected = 1
+                aSuit = card.suit
+
+        if aDetected == 1:
+            addNewAce = Card(1, aSuit, "🂾")
+            functionDeck.append(addNewAce)
+            functionDeck.sort(key=lambda card: card.value)
 
         for card in functionDeck:  # Straight Check
             if previousCardValue == 0:  # Move past from  first card
@@ -264,6 +303,7 @@ class Game:  # The actual Game and Rounds
                     previousCardValue = card.value
                     previousCardValueSuit = card.suit
 
+        functionDeck.remove(functionDeck[0])
         return False
 
     def royalFlushCheck(self, deck):
@@ -314,16 +354,8 @@ class Game:  # The actual Game and Rounds
 
             if answer == 1:
                 return 1
-            elif answer == 2:
+            if answer == 2:
                 return 2
-            else:
-                acceptableAnswer = False
-
-    def putTableAndPlayerCardsTogether(self):
-        for player in self.players:
-            for tableCard in self.table.tableDeck:
-                player.playerDeck.append(tableCard)  # Gets the table Cards added
-                player.playerDeck.sort(key=lambda card: card.value)  # We sort the new Card
 
 
 # -------------------------------------------------------------# -------------------------------------------------------------

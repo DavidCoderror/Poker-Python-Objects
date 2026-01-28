@@ -45,6 +45,11 @@ class Deck:
     def sortDeck(self):
         self.cardDeck.sort()
 
+    def customDeck(self, customDeck):
+        self.cardDeck = []
+        for value, suit, img in customDeck:
+            self.cardDeck.append(Card(value, suit, img))
+
 
 # -------------------------------------------------------------# -------------------------------------------------------------
 # Player Class
@@ -174,39 +179,39 @@ class Game:  # The actual Game and Rounds
             deck = player.playerDeck + self.table.tableDeck
             deck.sort(key=lambda card: card.value)  # We sort the new Card
 
-            if self.royalFlushCheck(deck):  # 1 Royal Flush
+            if self.royalFlushCheck(deck):  # 1 Royal Flush - WORKS
                 player.playerDeckValue = 1
                 pass
 
-            elif self.straightFlushCheck(deck):  # 2 Straight Flush
+            elif self.straightFlushCheck(deck):  # 2 Straight Flush - WORKS
                 player.playerDeckValue = 2
                 pass
 
-            elif self.countCards(deck, 4):  # 3 Four of a kind
+            elif self.countCards(deck, 4):  # 3 Four of a kind - WORKS
                 player.playerDeckValue = 3
                 pass
 
-            elif self.countCards(deck, 2) and self.countCards(deck, 3):  # 4 Full House
+            elif self.countCards(deck, 2) and self.countCards(deck, 3):  # 4 Full House (ReWork NEEDED) - WORKS THO
                 player.playerDeckValue = 4
                 pass
 
-            elif self.flushCheck(deck):  # 5 Flush
+            elif self.flushCheck(deck):  # 5 Flush - WORKS
                 player.playerDeckValue = 5
                 pass
 
-            elif self.staightCheck(deck):  # 6 Straight
+            elif self.staightCheck(deck):  # 6 Straight - WORKS
                 player.playerDeckValue = 6
                 pass
 
-            elif self.countCards(deck, 3):  # 7 Three of a kind
+            elif self.countCards(deck, 3):  # 7 Three of a kind - WORKS
                 player.playerDeckValue = 7
                 pass
 
-            elif self.countDoublePair(deck):  # 8 Two Pairs
+            elif self.countDoublePair(deck):  # 8 Two Pairs - WORKS
                 player.playerDeckValue = 8
                 pass
 
-            elif self.countCards(deck, 2):  # 9 One Pair
+            elif self.countCards(deck, 2):  # 9 One Pair - WORKS
                 player.playerDeckValue = 9
                 pass
 
@@ -379,11 +384,31 @@ class Game:  # The actual Game and Rounds
 # MAIN
 
 # Player List
-Computer = Player("Computer")
+# = Player("Computer")
 Human = Player("David")
+TestPlayer = Player("TEST")
 
-PlayerList = [Computer, Human]
+
+#PlayerList = [Computer, Human]
+PlayerList = [TestPlayer, Human]
+
 
 # Game Class
 Poker = Game(PlayerList)
+
+# Force player cards
+TestPlayer.playerDeck = [
+    Card(9, "♡", "🂪"),
+    Card(10, "♠", "🂫")
+]
+
+# Force table cards
+Poker.table.tableDeck = [
+    Card(11, "♠", "🂬"),
+    Card(8, "♡", "🂮"),
+    Card(12, "♠", "🂾"),
+    Card(4, "♣", "🃄"),
+    Card(9, "♡", "🂩")
+]
+
 Poker.startGame()

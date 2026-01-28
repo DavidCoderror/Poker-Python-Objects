@@ -17,3 +17,5 @@
 9th Update: Fixed Straights and reworked logic
 
 10th Update: Reworking Deckcheck method due to not working, LOTS OF ISSUES
+
+11th Update (27th Jan): MASSIVE REWORK (Straights, straightFlush, RoyaleFlush) and other general

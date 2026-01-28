@@ -4,8 +4,12 @@ import random
 
 
 # -------------------------------------------------------------# -------------------------------------------------------------
+
+
+# -------------------------------------------------------------# -------------------------------------------------------------
 # Card Class
 # -------------------------------------------------------------# -------------------------------------------------------------
+
 class Card:
     def __init__(self, value, suit, img):  # Initialization (What does a card holds)
         self.value = value
@@ -35,7 +39,6 @@ class Deck:
 
         random.shuffle(self.cardDeck)
 
-
     def customDeck(self, customDeck):
         self.cardDeck = []
         for value, suit, img in customDeck:
@@ -48,14 +51,13 @@ class Deck:
 
 class Player:
     def __init__(self, name):  # A player holds a deck
-        self.playerDeck = []
         self.playerName = name
+        self.playerDeck = []
         self.playerDeckValue = 0
-        self.deckStatsData = {
-            'HighPair': 0, 'HighThree': 0, 'HighFour': 0,
-            'LowPair': 0, 'LowThree': 0,
-            'LowCard': 0, 'HighCardType': 0, 'LowCardType': 0,
-            'FlushType': "", 'HighestCardInStraight': 0
+        self.playerDeckStatsData = {
+            'HighCard': 0, 'HighPair': 0, 'HighThree': 0, 'HighFour': 0,  # Highs
+            'LowCard': 0, 'LowPair': 0, 'LowThree': 0,  # lows
+            'FlushType': "N/A", 'HighestCardInStraight': 0, 'highCardInFlush' : 0
         }
 
     def receiveCard(self, MainDeck):  # Grab a card from MAIN deck and add to PLAYER deck
@@ -156,18 +158,95 @@ class Game:  # The actual Game and Rounds
 
         # Player 1 Wins
         if player1.playerDeckValue < player2.playerDeckValue:
-            print("Victory Royale : " + player1.playerName + " : " + str(
-                player1.playerDeckValue) + " - Other Dude : " + str(player2.playerDeckValue))
+            self.endMessage(1)
 
         # Player 1 Loses
         elif player1.playerDeckValue > player2.playerDeckValue:
-            print("Victory Royale : " + player2.playerName + " : " + str(
-                player2.playerDeckValue) + " - Other Dude : " + str(player1.playerDeckValue))
+            self.endMessage(2)
 
-        # Player 1 = Player 2 - No-One Wins
         else:
-            print("Tie : " + player2.playerName + " : " + str(
-                player2.playerDeckValue) + " - Other Dude : " + str(player1.playerDeckValue))
+            # 1. Straight Flush or Straight
+            if player1.playerDeckValue == 2 or player1.playerDeckValue == 6:
+                if player1.playerDeckStatsData['HighestCardInStraight'] > player2.playerDeckStatsData['HighestCardInStraight']:
+                    self.endMessage(1)
+                elif player1.playerDeckStatsData['HighestCardInStraight'] < player2.playerDeckStatsData['HighestCardInStraight']:
+                    self.endMessage(2)
+
+            # 2. Four of a kind
+            elif player1.playerDeckValue == 3:
+                if player1.playerDeckStatsData['highFour'] > player2.playerDeckStatsData['highFour']:
+                    self.endMessage(1)
+                elif player1.playerDeckStatsData['highFour'] < player2.playerDeckStatsData['highFour']:
+                    self.endMessage(2)
+
+            # 3. Full House -- REWORK (NEED TO LOOK INTO)
+            elif player1.playerDeckValue == 4:
+                pass
+
+            # 4. Flush -- REWORK (NEED TO LOOK INTO)
+            elif player1.playerDeckValue == 5:
+                if player1.playerDeckStatsData['highCard'] > player2.playerDeckStatsData['highCard']:
+                    self.endMessage(1)
+                elif player1.playerDeckStatsData['highCard'] < player2.playerDeckStatsData['highCard']:
+                    self.endMessage(2)
+                else:
+                    if player1.playerDeckStatsData['lowCard'] > player2.playerDeckStatsData['lowCard']:
+                        self.endMessage(1)
+                    elif player1.playerDeckStatsData['lowCard'] < player2.playerDeckStatsData['lowCard']:
+                        self.endMessage(2)
+
+            # 5. Three of a kind
+            elif player1.playerDeckValue == 7:
+                if player1.playerDeckStatsData['highThree'] > player2.playerDeckStatsData['highThree']:
+                    self.endMessage(1)
+                elif player1.playerDeckStatsData['highThree'] < player2.playerDeckStatsData['highThree']:
+                    self.endMessage(2)
+
+            # 6. Two Pair
+            elif player1.playerDeckValue == 8:
+                if player1.playerDeckStatsData['highPair'] > player2.playerDeckStatsData['highPair']:
+                    self.endMessage(1)
+                elif player1.playerDeckStatsData['highPair'] < player2.playerDeckStatsData['highPair']:
+                    self.endMessage(2)
+                else:
+                    if player1.playerDeckStatsData['lowPair'] > player2.playerDeckStatsData['lowPair']:
+                        self.endMessage(1)
+                    elif player1.playerDeckStatsData['lowPair'] < player2.playerDeckStatsData['lowPair']:
+                        self.endMessage(2)
+
+            # 7. Pair
+            elif player1.playerDeckValue == 9:
+                if player1.playerDeckStatsData['highPair'] > player2.playerDeckStatsData['highPair']:
+                    self.endMessage(1)
+                elif player1.playerDeckStatsData['highPair'] < player2.playerDeckStatsData['highPair']:
+                    self.endMessage(2)
+                else:
+                    if player1.playerDeckStatsData['highCard'] > player2.playerDeckStatsData['highCard']:
+                        self.endMessage(1)
+                    elif player1.playerDeckStatsData['highCard'] < player2.playerDeckStatsData['highCard']:
+                        self.endMessage(2)
+                    else:
+                        if player1.playerDeckStatsData['lowCard'] > player2.playerDeckStatsData['lowCard']:
+                            self.endMessage(1)
+                        elif player1.playerDeckStatsData['lowCard'] < player2.playerDeckStatsData['lowCard']:
+                            self.endMessage(2)
+
+            # 8. HighCard
+            elif player1.playerDeckValue == 10:
+                if player1.playerDeckStatsData['highCard'] > player2.playerDeckStatsData['highCard']:
+                    self.endMessage(1)
+                elif player1.playerDeckStatsData['highCard'] < player2.playerDeckStatsData['highCard']:
+                    self.endMessage(2)
+                else:
+                    if player1.playerDeckStatsData['lowCard'] > player2.playerDeckStatsData['lowCard']:
+                        self.endMessage(1)
+                    elif player1.playerDeckStatsData['lowCard'] < player2.playerDeckStatsData['lowCard']:
+                        self.endMessage(2)
+
+            # LAST RESORT: Player 1 = Player 2 - No-One Wins
+            else:
+                self.endMessage(3)
+
 
     def checkDeckValues(self):  # Checks Values of Deck of players (Scores from 1-10) 1 = Highest 10 = Lowest
 
@@ -175,6 +254,10 @@ class Game:  # The actual Game and Rounds
 
             deck = player.playerDeck + self.table.tableDeck
             deck.sort(key=lambda card: card.value)  # We sort the new Card
+
+            #High Card and LowCard
+            player.playerDeckStatsData["LowCard"] = player.playerDeck[0]
+            player.playerDeckStatsData["HighCard"] = player.playerDeck[1]
 
             if self.royalFlushCheck(deck, player):  # 1 Royal Flush - WORKS
                 player.playerDeckValue = 1
@@ -215,6 +298,7 @@ class Game:  # The actual Game and Rounds
             else:  # 10 High-card
                 player.playerDeckValue = 10
 
+
     def countCards(self, deck, player, number):  # pairs, Three, four
         values = [card.value for card in deck]
         for value in values:
@@ -223,11 +307,11 @@ class Game:  # The actual Game and Rounds
 
                 # Section to grab deck details
                 if count == 2:
-                    player.deckStatsData["HighPair"] = value
+                    player.playerDeckStatsData["HighPair"] = value
                 elif count == 3:
-                    player.deckStatsData["HighThree"] = value
+                    player.playerDeckStatsData["HighThree"] = value
                 elif count == 4:
-                    player.deckStatsData["HighFour"] = value
+                    player.playerDeckStatsData["HighFour"] = value
 
                 return True
         return False
@@ -252,12 +336,12 @@ class Game:  # The actual Game and Rounds
         pairListSize = len(pairList)
 
         if pairListSize == 2:  # Just 2 pairs
-            player.deckStatsData["LowPair"] = pairList[0]
-            player.deckStatsData["HighPair"] = pairList[1]
+            player.playerDeckStatsData["LowPair"] = pairList[0]
+            player.playerDeckStatsData["HighPair"] = pairList[1]
 
         elif pairListSize == 3:  # Contains 3 pairs
-            player.deckStatsData["LowPair"] = pairList[1]
-            player.deckStatsData["HighPair"] = pairList[2]
+            player.playerDeckStatsData["LowPair"] = pairList[1]
+            player.playerDeckStatsData["HighPair"] = pairList[2]
 
         return countOfPairs == 2
 
@@ -265,8 +349,8 @@ class Game:  # The actual Game and Rounds
         suits = [card.suit for card in deck]  # List of Suits
 
         for suit in suits:  # For suits in Suit
-            player.deckStatsData["FlushType"] = suit
             if suits.count(suit) >= 5:  # We just look to see if there are 5 or more of the same type
+                player.playerDeckStatsData["FlushType"] = suit
 
                 return True
         return False
@@ -300,10 +384,9 @@ class Game:  # The actual Game and Rounds
                 previousValue = value
 
                 if straightCount == 5:
-                    player.deckStatsData["HighestCardInStraight"] = value
+                    player.playerDeckStatsData["HighestCardInStraight"] = value
 
                     return True
-
 
         return False
 
@@ -434,6 +517,25 @@ class Game:  # The actual Game and Rounds
                 return 1
             if answer == 2:
                 return 2
+
+    def endMessage(self, number):
+        player1 = self.players[0]
+        player2 = self.players[1]
+
+        if number == 1: # Player 1 WINS
+            print("Victory Royale : " + player1.playerName + " : " + str(
+                player1.playerDeckValue) + " - Other Dude : " + str(player2.playerDeckValue))
+
+        elif number == 2: # Player 2 WINS
+            print("Victory Royale : " + player2.playerName + " : " + str(
+                player2.playerDeckValue) + " - Other Dude : " + str(player1.playerDeckValue))
+
+        elif number == 3: # TIE
+            print("Tie : " + player2.playerName + " : " + str(
+                player2.playerDeckValue) + " - Other Dude : " + str(player1.playerDeckValue))
+
+        else:
+            print("endMessage Method Issue - Use Correct Number")
 
 
 # -------------------------------------------------------------# -------------------------------------------------------------

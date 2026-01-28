@@ -28,4 +28,6 @@
 
 13th Update (28th Jan): Full house now reworked (Accpets both  Pair and Three of a kind) AND NOW (2 Three of a kind) .... Next step is further comparisions of both decks
 
-14th Update (28th Jan): Added some stats o some of the methods and adjusted them accordingly, havent tested it out yet.
+14th Update (28th Jan): Added some stats some of the methods and adjusted them accordingly, havent tested it out yet.
+
+15th Update (28th Jan): Went into depth with checkWinner method. Logic to see who would win if they had both Pair per exemple. Might need to make it cleaner + Need to fix Full house and flus + Test

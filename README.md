@@ -23,3 +23,5 @@
 --------------------------------------------------------------------------------------------------------Week 2
 
 11th Update (27th Jan): MASSIVE REWORK (Straights, straightFlush, RoyaleFlush) and other general
+
+12th Update (27th Jan): Game can now proprelly evaluate a deck level, Full House need to be reworked and also need to go deeper in verification of winner

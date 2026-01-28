@@ -80,7 +80,7 @@ class Table:
             while len(self.tableDeck) < 3:  # Create the 3 Starting Cards
                 self.receiveCard(MainDeck)
         except:
-            print("Tabel Setup has encountered an issue")
+            print("Table Setup has encountered an issue")
 
     def receiveCard(self, MainDeck):  # Grab a card from MAIN deck and add to Table deck
         newCard = MainDeck.cardDeck.pop()
@@ -191,7 +191,7 @@ class Game:  # The actual Game and Rounds
                 player.playerDeckValue = 3
                 pass
 
-            elif self.countCards(deck, 2) and self.countCards(deck, 3):  # 4 Full House (ReWork NEEDED) - WORKS THO
+            elif self.fullHouse(deck):  # 4 Full House - WORKS
                 player.playerDeckValue = 4
                 pass
 
@@ -276,12 +276,40 @@ class Game:  # The actual Game and Rounds
                     return True
         return False
 
+    def fullHouse(self, deck):
+        countOfPairs = 0
+        countOfThrees = 0
+
+        values = [card.value for card in deck]
+        cardsChecked = []
+
+        for value in values:
+            count = values.count(value)
+
+            if value not in cardsChecked:  # Check if card already in deck
+                if count == 2:
+                    countOfPairs += 1
+                    cardsChecked.append(value)  # Add to list to get marked that we checked
+
+                if count == 3:
+                    countOfThrees += 1
+                    cardsChecked.append(value)  # Add to list to get marked that we checked
+
+        if countOfPairs >= 1 and countOfThrees == 1:
+            return True
+
+        elif countOfThrees == 2:
+            return True
+
+        else:
+            return False
+
     def straightFlushCheck(self, deck):  # Check if deck contains straight which is also a flush
 
         if self.flushCheck(deck) is not True:  # Check if there is a flush
             return False
 
-        #Make Local List
+        # Make Local List System
         hearts = []
         diamonds = []
         spades = []
@@ -333,7 +361,7 @@ class Game:  # The actual Game and Rounds
         if self.staightCheck(deck) is not True:  # Check if there is a straight
             return False
 
-        #Make Local List
+        # Make Local List
         hearts = []
         diamonds = []
         spades = []
@@ -388,10 +416,8 @@ class Game:  # The actual Game and Rounds
 Human = Player("David")
 TestPlayer = Player("TEST")
 
-
-#PlayerList = [Computer, Human]
+# PlayerList = [Computer, Human]
 PlayerList = [TestPlayer, Human]
-
 
 # Game Class
 Poker = Game(PlayerList)
@@ -405,8 +431,8 @@ TestPlayer.playerDeck = [
 # Force table cards
 Poker.table.tableDeck = [
     Card(11, "♠", "🂬"),
-    Card(8, "♡", "🂮"),
-    Card(12, "♠", "🂾"),
+    Card(11, "♡", "🂮"),
+    Card(11, "♠", "🂾"),
     Card(4, "♣", "🃄"),
     Card(9, "♡", "🂩")
 ]

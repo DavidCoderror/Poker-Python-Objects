@@ -1,9 +1,15 @@
+# -------------------------------------------------------------# -------------------------------------------------------------
 # Imports
 import random
 
 
 # -------------------------------------------------------------# -------------------------------------------------------------
+
+
+# -------------------------------------------------------------# -------------------------------------------------------------
 # Card Class
+# -------------------------------------------------------------# -------------------------------------------------------------
+
 class Card:
     def __init__(self, value, suit, img):  # Initialization (What does a card holds)
         self.value = value
@@ -16,6 +22,7 @@ class Card:
 
 # -------------------------------------------------------------# -------------------------------------------------------------
 # Deck Class
+# -------------------------------------------------------------# -------------------------------------------------------------
 class Deck:
     def __init__(self):  # A Deck holds Cards
         self.cardDeck = []
@@ -41,6 +48,8 @@ class Deck:
 
 # -------------------------------------------------------------# -------------------------------------------------------------
 # Player Class
+# -------------------------------------------------------------# -------------------------------------------------------------
+
 class Player:
     def __init__(self, name):  # A player holds a deck
         self.playerDeck = []
@@ -55,6 +64,7 @@ class Player:
 
 # -------------------------------------------------------------# -------------------------------------------------------------
 # Table Class
+# -------------------------------------------------------------# -------------------------------------------------------------
 class Table:
     def __init__(self):
         self.tableDeck = []
@@ -74,6 +84,7 @@ class Table:
 
 # -------------------------------------------------------------# -------------------------------------------------------------
 # Game Class
+# -------------------------------------------------------------# -------------------------------------------------------------
 class Game:  # The actual Game and Rounds
     def __init__(self, playerNames):
         self.deck = Deck()
@@ -132,26 +143,29 @@ class Game:  # The actual Game and Rounds
         print(f"Round : {self.round}")
         print("**************")
 
-    # -------------------------------------------------------------------- We check the winner!
+    # -------------------------------------------------------------# # -------------------------------------------------------------#
+    # -------------------------------------------------------------------- We check the winner!# ------------------------------------------------------------- #
+    # -------------------------------------------------------------# # -------------------------------------------------------------#
+
     def checkWinner(self):
         self.checkDeckValues()  # Check Decks
         player1 = self.players[0]
         player2 = self.players[1]
 
-        # Player 1 < Player 2 - Human Higher
-        if player1.playerDeckValue > player2.playerDeckValue:
+        # Player 1 Wins
+        if player1.playerDeckValue < player2.playerDeckValue:
             print("Victory Royale : " + player1.playerName + " : " + str(
-                player1.playerDeckValue) + " - Other Dude : " + str(player1.playerDeckValue))
+                player1.playerDeckValue) + " - Other Dude : " + str(player2.playerDeckValue))
 
-        # Player 1 > Player 2 - Bot Higher
-        elif player1.playerDeckValue < player2.playerDeckValue:
+        # Player 1 Loses
+        elif player1.playerDeckValue > player2.playerDeckValue:
             print("Victory Royale : " + player2.playerName + " : " + str(
                 player2.playerDeckValue) + " - Other Dude : " + str(player1.playerDeckValue))
 
         # Player 1 = Player 2 - No-One Wins
         else:
-            print("Tie")
-        # -------------------------------------------------------------------- Deck Check!
+            print("Tie : " + player2.playerName + " : " + str(
+                player2.playerDeckValue) + " - Other Dude : " + str(player1.playerDeckValue))
 
     def checkDeckValues(self):  # Checks Values of Deck of players (Scores from 1-10) 1 = Highest 10 = Lowest
 
@@ -162,30 +176,39 @@ class Game:  # The actual Game and Rounds
 
             if self.royalFlushCheck(deck):  # 1 Royal Flush
                 player.playerDeckValue = 1
+                pass
 
             elif self.straightFlushCheck(deck):  # 2 Straight Flush
                 player.playerDeckValue = 2
+                pass
 
             elif self.countCards(deck, 4):  # 3 Four of a kind
                 player.playerDeckValue = 3
+                pass
 
             elif self.countCards(deck, 2) and self.countCards(deck, 3):  # 4 Full House
                 player.playerDeckValue = 4
+                pass
 
             elif self.flushCheck(deck):  # 5 Flush
                 player.playerDeckValue = 5
+                pass
 
             elif self.staightCheck(deck):  # 6 Straight
                 player.playerDeckValue = 6
+                pass
 
             elif self.countCards(deck, 3):  # 7 Three of a kind
                 player.playerDeckValue = 7
+                pass
 
             elif self.countDoublePair(deck):  # 8 Two Pairs
                 player.playerDeckValue = 8
+                pass
 
             elif self.countCards(deck, 2):  # 9 One Pair
                 player.playerDeckValue = 9
+                pass
 
             else:  # 10 High-card
                 player.playerDeckValue = 10
@@ -214,138 +237,129 @@ class Game:  # The actual Game and Rounds
 
         return countOfPairs == 2
 
-
-
     def flushCheck(self, deck):  # Check Flushes
         suits = [card.suit for card in deck]  # List of Suits
 
         for suit in suits:  # For suits in Suit
-            if suits.count(suit) >= 5:
+            if suits.count(suit) >= 5:  # We just look to see if there are 5 or more of the same type
                 return True
         return False
 
-
     def staightCheck(self, deck):  # Check if deck contains straight
-        count = 1
-        previousCardValue = 0
-        functionDeck = deck
+        values = [card.value for card in deck]
+        values = sorted(set(values))
 
-        aDetected = 0
-        aSuit = ""
-        for card in functionDeck:  # Ace counts as both value 1 and 14
-            if card.value == 14:
-                aDetected = 1
-                aSuit = card.suit
+        straightCount = 1
+        previousValue = 0
 
-        if aDetected == 1:
-            addNewAce = Card(1, aSuit, "🂾")
-            functionDeck.append(addNewAce)
-            functionDeck.sort(key=lambda card: card.value)
+        countAces = values.count(14)
+        if countAces >= 1:
+            values.append(1)
+            values.sort()  # We sort the new Card
 
-        for card in functionDeck:
-            if previousCardValue == 0:  # Move past from  first card
-                previousCardValue = card.value
+        for value in values:
+            if previousValue == 0:
+                previousValue = value
             else:
-                if card.value == previousCardValue:  # if card is same value
-                    pass
+                if previousValue + 1 == value:
+                    straightCount += 1
+                else:
+                    straightCount = 1
+                previousValue = value
 
-                elif card.value == previousCardValue + 1:  # if card is one higher than next
-                    count += 1
-                    previousCardValue = card.value
-                    if count == 5:  # If there are 5 cards in a row higher than 1
-                        functionDeck.remove(functionDeck[0])
-                        return True
-
-                else:  # if not higher than 1, reset count variable
-                    count = 1
-                    previousCardValue = card.value
-
-        functionDeck.remove(functionDeck[0])
+                if straightCount == 5:
+                    return True
         return False
 
     def straightFlushCheck(self, deck):  # Check if deck contains straight which is also a flush
-        count = 1
-        previousCardValue = 0
-        previousCardValueSuit = ""
 
-        functionDeck = deck
+        if self.flushCheck(deck) is not True:  # Check if there is a flush
+            return False
 
-        aDetected = 0
-        aSuit = ""
-        for card in functionDeck:  # Ace counts as both value 1 and 14
-            if card.value == 14:
-                aDetected = 1
-                aSuit = card.suit
+        #Make Local List
+        hearts = []
+        diamonds = []
+        spades = []
+        clubs = []
 
-        if aDetected == 1:
-            addNewAce = Card(1, aSuit, "🂾")
-            functionDeck.append(addNewAce)
-            functionDeck.sort(key=lambda card: card.value)
-
-        for card in functionDeck:  # Straight Check
-            if previousCardValue == 0:  # Move past from  first card
-                previousCardValue = card.value
-                previousCardValueSuit = card.suit
+        for card in deck:
+            if card.suit == "♡":
+                hearts.append(card.value)
+            elif card.suit == "♢":
+                diamonds.append(card.value)
+            elif card.suit == "♠":
+                spades.append(card.value)
             else:
-                if card.value == previousCardValue:  # if card is same value
-                    pass
+                clubs.append(card.value)
 
-                elif card.value == previousCardValue + 1 and card.suit == previousCardValueSuit:  # if card is one higher than next one and same suit
-                    count += 1
-                    previousCardValue = card.value
-                    previousCardValueSuit = card.suit
+        listOfSuits = [hearts, diamonds, spades, clubs]
 
-                    if count == 5:  # If there are 5 cards in a row higher than 1
+        for suits in listOfSuits:
+            values = suits
+            values = sorted(set(values))
+
+            straightCount = 1
+            previousValue = 0
+
+            countAces = values.count(14)
+            if countAces >= 1:
+                values.append(1)
+                values.sort()  # We sort the new Card
+
+            for value in values:
+                if previousValue == 0:
+                    previousValue = value
+                else:
+                    if previousValue + 1 == value:
+                        straightCount += 1
+                    else:
+                        straightCount = 1
+                    previousValue = value
+
+                    if straightCount == 5:
                         return True
-
-                else:  # if not higher than 1, reset count variable
-                    count = 1
-                    previousCardValue = card.value
-                    previousCardValueSuit = card.suit
-
-        functionDeck.remove(functionDeck[0])
         return False
 
     def royalFlushCheck(self, deck):
-        count = 0
-        cardSuit = ""
 
-        if self.flushCheck(deck):  # Check to see if there is a flush to begin with
+        if self.flushCheck(deck) is not True:  # Check if there is a flush
             return False
 
-        elif self.staightCheck(deck):  # Check to se if there is a straight to begin with
+        if self.staightCheck(deck) is not True:  # Check if there is a straight
             return False
 
-        else:
-            for card in deck:
-                if card.value == 10:
-                    count += 1
-                    cardSuit = card.suit  # Make this the standard
+        #Make Local List
+        hearts = []
+        diamonds = []
+        spades = []
+        clubs = []
 
-                if card.value == 11:
-                    if cardSuit == card.suit:
-                        count += 1
+        neededValues = {10, 11, 12, 13, 14}
 
-                if card.value == 12:
-                    if cardSuit is not card.suit:
-                        if cardSuit == card.suit:
-                            count += 1
+        for card in deck:
+            if card.suit == "♡":
+                hearts.append(card.value)
+            elif card.suit == "♢":
+                diamonds.append(card.value)
+            elif card.suit == "♠":
+                spades.append(card.value)
+            else:
+                clubs.append(card.value)
 
-                if card.value == 13:
-                    if cardSuit is not card.suit:
-                        if cardSuit == card.suit:
-                            count += 1
+        listOfSuits = [hearts, diamonds, spades, clubs]
 
-                if card.value == 14:
-                    if cardSuit == card.suit:
-                        count += 1
+        for suits in listOfSuits:
+            values = suits
+            values = sorted(set(values))
 
-        if count == 5:
-            return True
-        else:
-            return False
+            if neededValues.issubset(values):
+                return True
 
-    # -------------------------------------------------------------------- Extra
+        return False
+
+    # -------------------------------------------------------------#  -------------------------------------------------------------# -------------------------------------------------------------
+    # -------------------------------------------------------------------- Extra # -------------------------------------------------------------# -------------------------------------------------------------
+    # -------------------------------------------------------------# -------------------------------------------------------------# -------------------------------------------------------------
 
     def askPlayerToContinue(self):
         acceptableAnswer = True
@@ -359,12 +373,15 @@ class Game:  # The actual Game and Rounds
 
 
 # -------------------------------------------------------------# -------------------------------------------------------------
+# -------------------------------------------------------------# -------------------------------------------------------------
+# -------------------------------------------------------------# -------------------------------------------------------------
 
 # MAIN
 
 # Player List
 Computer = Player("Computer")
 Human = Player("David")
+
 PlayerList = [Computer, Human]
 
 # Game Class

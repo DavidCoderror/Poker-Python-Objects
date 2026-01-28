@@ -4,12 +4,8 @@ import random
 
 
 # -------------------------------------------------------------# -------------------------------------------------------------
-
-
-# -------------------------------------------------------------# -------------------------------------------------------------
 # Card Class
 # -------------------------------------------------------------# -------------------------------------------------------------
-
 class Card:
     def __init__(self, value, suit, img):  # Initialization (What does a card holds)
         self.value = value
@@ -37,13 +33,8 @@ class Deck:
             for value in cardValues:
                 self.cardDeck.append(Card(value, suit, cardImage[value - 2]))
 
-        self.shuffle()  # Shuffle the deck
-
-    def shuffle(self):  # Shuffles the Deck for us (Randomizes it)
         random.shuffle(self.cardDeck)
 
-    def sortDeck(self):
-        self.cardDeck.sort()
 
     def customDeck(self, customDeck):
         self.cardDeck = []
@@ -60,6 +51,12 @@ class Player:
         self.playerDeck = []
         self.playerName = name
         self.playerDeckValue = 0
+        self.deckStatsData = {
+            'HighPair': 0, 'HighThree': 0, 'HighFour': 0,
+            'LowPair': 0, 'LowThree': 0,
+            'LowCard': 0, 'HighCardType': 0, 'LowCardType': 0,
+            'FlushType': "", 'HighestCardInStraight': 0
+        }
 
     def receiveCard(self, MainDeck):  # Grab a card from MAIN deck and add to PLAYER deck
         newCard = MainDeck.cardDeck.pop()
@@ -179,83 +176,109 @@ class Game:  # The actual Game and Rounds
             deck = player.playerDeck + self.table.tableDeck
             deck.sort(key=lambda card: card.value)  # We sort the new Card
 
-            if self.royalFlushCheck(deck):  # 1 Royal Flush - WORKS
+            if self.royalFlushCheck(deck, player):  # 1 Royal Flush - WORKS
                 player.playerDeckValue = 1
                 pass
 
-            elif self.straightFlushCheck(deck):  # 2 Straight Flush - WORKS
+            elif self.straightFlushCheck(deck, player):  # 2 Straight Flush - WORKS
                 player.playerDeckValue = 2
                 pass
 
-            elif self.countCards(deck, 4):  # 3 Four of a kind - WORKS
+            elif self.countCards(deck, player, 4):  # 3 Four of a kind - WORKS
                 player.playerDeckValue = 3
                 pass
 
-            elif self.fullHouse(deck):  # 4 Full House - WORKS
+            elif self.fullHouse(deck, player):  # 4 Full House - WORKS
                 player.playerDeckValue = 4
                 pass
 
-            elif self.flushCheck(deck):  # 5 Flush - WORKS
+            elif self.flushCheck(deck, player):  # 5 Flush - WORKS
                 player.playerDeckValue = 5
                 pass
 
-            elif self.staightCheck(deck):  # 6 Straight - WORKS
+            elif self.staightCheck(deck, player):  # 6 Straight - WORKS
                 player.playerDeckValue = 6
                 pass
 
-            elif self.countCards(deck, 3):  # 7 Three of a kind - WORKS
+            elif self.countCards(deck, player, 3):  # 7 Three of a kind - WORKS
                 player.playerDeckValue = 7
                 pass
 
-            elif self.countDoublePair(deck):  # 8 Two Pairs - WORKS
+            elif self.countDoublePair(deck, player):  # 8 Two Pairs - WORKS
                 player.playerDeckValue = 8
                 pass
 
-            elif self.countCards(deck, 2):  # 9 One Pair - WORKS
+            elif self.countCards(deck, player, 2):  # 9 One Pair - WORKS
                 player.playerDeckValue = 9
                 pass
 
             else:  # 10 High-card
                 player.playerDeckValue = 10
 
-    def countCards(self, deck, number):  # pairs,Three, four
+    def countCards(self, deck, player, number):  # pairs, Three, four
         values = [card.value for card in deck]
-
         for value in values:
             count = values.count(value)
             if count == number:
+
+                # Section to grab deck details
+                if count == 2:
+                    player.deckStatsData["HighPair"] = value
+                elif count == 3:
+                    player.deckStatsData["HighThree"] = value
+                elif count == 4:
+                    player.deckStatsData["HighFour"] = value
+
                 return True
         return False
 
-    def countDoublePair(self, deck):  # Double Pair
+    def countDoublePair(self, deck, player):  # Double Pair
         countOfPairs = 0
         values = [card.value for card in deck]
         cardsChecked = []
+
+        pairList = []
 
         for value in values:
             count = values.count(value)
 
             if value not in cardsChecked:  # Check if card already in deck
                 if count == 2:
+                    pairList.append(value)
                     countOfPairs += 1
-                    cardsChecked.append(value)  # Add to list to get marked that we checked
+                cardsChecked.append(value)  # Add to list to get marked that we checked
+
+        # Section to grab deck details
+        pairListSize = len(pairList)
+
+        if pairListSize == 2:  # Just 2 pairs
+            player.deckStatsData["LowPair"] = pairList[0]
+            player.deckStatsData["HighPair"] = pairList[1]
+
+        elif pairListSize == 3:  # Contains 3 pairs
+            player.deckStatsData["LowPair"] = pairList[1]
+            player.deckStatsData["HighPair"] = pairList[2]
 
         return countOfPairs == 2
 
-    def flushCheck(self, deck):  # Check Flushes
+    def flushCheck(self, deck, player):  # Check Flushes
         suits = [card.suit for card in deck]  # List of Suits
 
         for suit in suits:  # For suits in Suit
+            player.deckStatsData["FlushType"] = suit
             if suits.count(suit) >= 5:  # We just look to see if there are 5 or more of the same type
+
                 return True
         return False
 
-    def staightCheck(self, deck):  # Check if deck contains straight
+    def staightCheck(self, deck, player):  # Check if deck contains straight
         values = [card.value for card in deck]
         values = sorted(set(values))
 
         straightCount = 1
         previousValue = 0
+
+        straightList = []
 
         countAces = values.count(14)
         if countAces >= 1:
@@ -268,15 +291,23 @@ class Game:  # The actual Game and Rounds
             else:
                 if previousValue + 1 == value:
                     straightCount += 1
+                    straightList.append(value)
                 else:
                     straightCount = 1
+                    straightList.clear()
+
+                straightList.append(value)
                 previousValue = value
 
                 if straightCount == 5:
+                    player.deckStatsData["HighestCardInStraight"] = value
+
                     return True
+
+
         return False
 
-    def fullHouse(self, deck):
+    def fullHouse(self, deck, player):
         countOfPairs = 0
         countOfThrees = 0
 
@@ -304,9 +335,9 @@ class Game:  # The actual Game and Rounds
         else:
             return False
 
-    def straightFlushCheck(self, deck):  # Check if deck contains straight which is also a flush
+    def straightFlushCheck(self, deck, player):  # Check if deck contains straight which is also a flush
 
-        if self.flushCheck(deck) is not True:  # Check if there is a flush
+        if self.flushCheck(deck, player) is not True:  # Check if there is a flush
             return False
 
         # Make Local List System
@@ -353,12 +384,12 @@ class Game:  # The actual Game and Rounds
                         return True
         return False
 
-    def royalFlushCheck(self, deck):
+    def royalFlushCheck(self, deck, player):
 
-        if self.flushCheck(deck) is not True:  # Check if there is a flush
+        if self.flushCheck(deck, player) is not True:  # Check if there is a flush
             return False
 
-        if self.staightCheck(deck) is not True:  # Check if there is a straight
+        if self.staightCheck(deck, player) is not True:  # Check if there is a straight
             return False
 
         # Make Local List

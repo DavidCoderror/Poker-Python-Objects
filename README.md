@@ -1,3 +1,5 @@
+--------------------------------------------------------------------------------------------------------Week 1
+
 1st Update: Created Main Deck and able to print all
 
 2nd Update: Created Player Class and be able to print deck
@@ -17,5 +19,7 @@
 9th Update: Fixed Straights and reworked logic
 
 10th Update: Reworking Deckcheck method due to not working, LOTS OF ISSUES
+
+--------------------------------------------------------------------------------------------------------Week 2
 
 11th Update (27th Jan): MASSIVE REWORK (Straights, straightFlush, RoyaleFlush) and other general

@@ -25,3 +25,5 @@
 11th Update (27th Jan): MASSIVE REWORK (Straights, straightFlush, RoyaleFlush) and other general
 
 12th Update (27th Jan): Game can now proprelly evaluate a deck level, Full House need to be reworked and also need to go deeper in verification of winner
+
+13th Update (28th Jan): Full house now reworked (Accpets both  Pair and Three of a kind) AND NOW (2 Three of a kind) .... Next step is further comparisions of both decks

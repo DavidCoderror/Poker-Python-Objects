@@ -31,3 +31,12 @@
 14th Update (28th Jan): Added some stats some of the methods and adjusted them accordingly, havent tested it out yet.
 
 15th Update (28th Jan): Went into depth with checkWinner method. Logic to see who would win if they had both Pair per exemple. Might need to make it cleaner + Need to fix Full house and flus + Test
+
+--------------------------------------------------------------------------------------------------------Week 3
+
+We spent the whole week studying and working on other projects in our classes. EXAM WEEK
+
+--------------------------------------------------------------------------------------------------------Week 4
+
+16th Update (15th Feb): I had to rework logic and fix up full house and also flush to make sure it compares the cards correctly, still needs to verify that other cards followe the proper rules
+

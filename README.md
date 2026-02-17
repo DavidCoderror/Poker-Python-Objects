@@ -40,3 +40,5 @@ We spent the whole week studying and working on other projects in our classes. E
 
 16th Update (15th Feb): I had to rework logic and fix up full house and also flush to make sure it compares the cards correctly, still needs to verify that other cards followe the proper rules
 
+17th Update (16th Feb): Im trying out some stuff to make it mrope optimal i n general, also fixing some small issues
+

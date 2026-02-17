@@ -1,7 +1,7 @@
 # -------------------------------------------------------------# -------------------------------------------------------------
 # Imports
 import random
-
+from collections import Counter
 
 # -------------------------------------------------------------# -------------------------------------------------------------
 
@@ -331,22 +331,26 @@ class Game:  # The actual Game and Rounds
     def countCards(self, deck, player, number):  # pairs, Three, four
         values = [card.value for card in deck]
         cardChecked = False
-        oldCardValue = True
+
+        count = Counter(values)
 
         for value in values:
-            count = values.count(value)
-            if count == number:
+            if count[value] == number:
 
                 # Section to grab deck details
-                if count == 2:
+                if number == 2:
                     player.playerDeckStatsData["HighPair"] = value
-                elif count == 3:
+                    cardChecked = True
+
+                elif number == 3:
                     player.playerDeckStatsData["HighThree"] = value
-                elif count == 4:
+                    cardChecked = True
+
+                elif number == 4:
                     player.playerDeckStatsData["HighFour"] = value
+                    cardChecked = True
 
 
-                cardChecked = True
         return cardChecked
 
     def countDoublePair(self, deck, player):  # Double Pair

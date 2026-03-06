@@ -42,3 +42,7 @@ We spent the whole week studying and working on other projects in our classes. E
 
 17th Update (16th Feb): Im trying out some stuff to make it mrope optimal i n general, also fixing some small issues
 
+--------------------------------------------------------------------------------------------------------Week 6
+
+18th Update (05 March): Been busy with the actual website, we are now impelemting fucnion from python onto it. Made the code optimal for react and not console
+

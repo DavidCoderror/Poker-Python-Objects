@@ -65,6 +65,13 @@ class Player:
         self.playerDeck.append(newCard)  # We get a new card
         self.playerDeck.sort(key=lambda card: card.value)  # We sort the new Card
 
+    def resetData(self):
+        self.playerDeckStatsData = {
+            'HighCard': 0, 'HighPair': 0, 'HighThree': 0, 'HighFour': 0,
+            'LowCard': 0, 'LowPair': 0, 'LowThree': 0,
+            'FlushType': "N/A", 'HighestCardInStraight': 0, 'FlushValues': []
+        }
+
 
 # -------------------------------------------------------------# -------------------------------------------------------------
 # Table Class
@@ -95,57 +102,77 @@ class Game:  # The actual Game and Rounds
         self.table = Table()
         self.players = []
         self.round = 0
-        self.fold = False
+        self.currentTurn = 0
+        self.playerFolded = False
 
-        for name in playerNames:  # Add players to the list
-            self.players.append(name)
+        for player in playerNames:  # Add players to the list
+            self.players.append(player)
 
-    def startGame(self):
-        for player in self.players:  # Players Get their 2 initial Cards
-            player.receiveCard(self.deck)
-            player.receiveCard(self.deck)
+    def startGame(self): # Reset and Setups
 
-        self.table.setupTable(self.deck)  # Table gets their Cards
-        self.currentState()
+        self.deck = Deck()
+        self.round = 0
+        self.playerFolded  = False
+        self.table.tableDeck = []
 
-        startPlayerResponse = self.askPlayerToContinue()
-
-        if startPlayerResponse == 2:
-            print("Folded!!")
-            pass
-        else:
-            # -------------------------------------------------------------------- Start of Actual Game
-            while self.round < 2 and self.fold is not True:  # Round System
-                self.roundCounter()  # Round UI ----- Round 1
-                self.table.receiveCard(self.deck)
-                self.currentState()
-                playerResponse = self.askPlayerToContinue()
-
-                if playerResponse == 1:
-                    pass
-                elif playerResponse == 2:
-                    print("Folded!!")
-                    break
-        self.checkWinner()
-        # -------------------------------------------------------------------- End of Actual Game
-
-    def currentState(self):  # We Show The Cards
-        print("--------Table------")  # Table UI
-        for card in self.table.tableDeck:
-            print(card)
-
-        print("------Players------")  # Players UI
         for player in self.players:
-            print(player.playerName)
+            player.playerDeck = []
+            player.receiveCard(self.deck)
+            player.receiveCard(self.deck)
+            player.resetData()
+            player.playerDeckValue = 0
 
-            for card in player.playerDeck:
-                print(card)
+        self.table.setupTable(self.deck)
 
-    def roundCounter(self):  # Round Console UI
+    def hit(self):
+        if self.round >= 2:
+            return {"status": "showdown", "state": self.getFinalState()}
+
+        self.table.receiveCard(self.deck)
         self.round += 1
-        print("**************")
-        print(f"Round : {self.round}")
-        print("**************")
+
+        if self.round == 2:
+            return {"status": "showdown", "state": self.getFinalState()}
+
+        return {"status": "continue", "state": self.getStateForPlayer(1)}  # Assuming player 1 is human
+
+    def fold(self, playerIndex):
+        self.playerFolded = True
+        return {
+            "status": "player_folded",
+            "foldedPlayer": self.players[playerIndex].playerName,
+            "state": self.getStateForPlayer(1)
+        }
+
+    def cardToDict(self, card):
+        return {
+            "value": card.value,
+            "suit": card.suit,
+            "img": card.img
+        }
+
+    def getStateForPlayer(self, playerIndex): # Grab the State
+
+        player = self.players[playerIndex]
+
+        return {
+            "table": [self.cardToDict(card) for card in self.table.tableDeck],
+            "your_cards": [self.cardToDict(card) for card in player.playerDeck],
+            "opponent_cards": ["🂠", "🂠"]  # hidden cards
+        }
+
+    def getFinalState(self):  # When Cards Revealed at the end
+        player1 = self.players[0]
+        player2 = self.players[1]
+
+        return {
+            "table": [self.cardToDict(card) for card in self.table.tableDeck],
+            "player1_cards": [self.cardToDict(card) for card in player1.playerDeck],
+            "player2_cards": [self.cardToDict(card) for card in player2.playerDeck],
+        }
+
+    def getRoundCounter(self):  # Get the Round State
+        return self.round
 
     # -------------------------------------------------------------# # -------------------------------------------------------------#
     # -------------------------------------------------------------------- We check the winner!# ------------------------------------------------------------- #
@@ -184,7 +211,7 @@ class Game:  # The actual Game and Rounds
                 elif player1.playerDeckStatsData['HighFour'] < player2.playerDeckStatsData['HighFour']:
                     self.endMessage(2)
                     pass
-            # 3. Full House -- REWORK (NEED TO LOOK INTO)
+            # 3. Full House
             elif player1.playerDeckValue == 4:
                 if player1.playerDeckStatsData['HighThree'] > player2.playerDeckStatsData['HighThree']:
                     self.endMessage(1)
@@ -550,73 +577,16 @@ class Game:  # The actual Game and Rounds
 
         return False
 
-    # -------------------------------------------------------------#  -------------------------------------------------------------# -------------------------------------------------------------
-    # -------------------------------------------------------------------- Extra # -------------------------------------------------------------# -------------------------------------------------------------
-    # -------------------------------------------------------------# -------------------------------------------------------------# -------------------------------------------------------------
-
-    def askPlayerToContinue(self):
-        acceptableAnswer = True
-        while acceptableAnswer:
-            answer = int(input("Do you want to Continue (1) or Fold(2)? : "))
-
-            if answer == 1:
-                return 1
-            if answer == 2:
-                return 2
-
-    def endMessage(self, number):
-        player1 = self.players[0]
-        player2 = self.players[1]
-
-        if number == 1:  # Player 1 WINS
-            print("Victory Royale : " + player1.playerName + " : " + str(
-                player1.playerDeckValue) + " - Other Dude : " + str(player2.playerDeckValue))
-
-        elif number == 2:  # Player 2 WINS
-            print("Victory Royale : " + player2.playerName + " : " + str(
-                player2.playerDeckValue) + " - Other Dude : " + str(player1.playerDeckValue))
-
-        elif number == 3:  # TIE
-            print("Tie : " + player2.playerName + " : " + str(
-                player2.playerDeckValue) + " - Other Dude : " + str(player1.playerDeckValue))
-
-        else:
-            print("endMessage Method Issue - Use Correct Number")
-
-
 # -------------------------------------------------------------# -------------------------------------------------------------
 # -------------------------------------------------------------# -------------------------------------------------------------
 # -------------------------------------------------------------# -------------------------------------------------------------
-
 # MAIN
 
 # Player List
-# = Player("Computer")
+Computer = Player("Computer")
 Human = Player("David")
-TestPlayer = Player("TEST")
-
-# PlayerList = [Computer, Human]
-PlayerList = [TestPlayer, Human]
+PlayerList = [Computer, Human]
 
 # Game Class
 Poker = Game(PlayerList)
-
-# Force player cards
-TestPlayer.playerDeck = [
-    Card(11, "♠", "🂬"),
-    Card(11, "♡", "🂮"),
-    Card(11, "♠", "🂾"),
-    Card(9, "♣", "🃄"),
-    Card(9, "♡", "🂩")
-]
-
-# Force table cards
-#Poker.table.tableDeck = [
-#    Card(11, "♠", "🂬"),
-#    Card(11, "♡", "🂮"),
-#    Card(11, "♠", "🂾"),
-##
-# #Card(9, "♡", "🂩")
-#]
-
 Poker.startGame()

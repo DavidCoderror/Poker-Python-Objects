@@ -48,6 +48,6 @@ We spent the whole week studying and working on other projects in our classes. E
 
 --------------------------------------------------------------------------------------------------------Week 9?
 
-19Th Update (16 march): Code is now good Interface to play a basic game on website. Logic errors is also fixed
-
+19Th Update (16th March): Code is now good Interface to play a basic game on website. Logic errors is also fixed
+20Th Update (16th March) : Hand Value is now trnamsitted on the site!
 

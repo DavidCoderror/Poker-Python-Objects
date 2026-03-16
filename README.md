@@ -46,3 +46,8 @@ We spent the whole week studying and working on other projects in our classes. E
 
 18th Update (05 March): Been busy with the actual website, we are now impelemting fucnion from python onto it. Made the code optimal for react and not console
 
+--------------------------------------------------------------------------------------------------------Week 9?
+
+19Th Update (16 march): Code is now good Interface to play a basic game on website. Logic errors is also fixed
+
+

@@ -613,34 +613,3 @@ class Game:  # The actual Game and Rounds
                 return player2.playerName
         return "Tie"
 
-# -------------------------------------------------------------# -------------------------------------------------------------
-# -------------------------------------------------------------# -------------------------------------------------------------
-# -------------------------------------------------------------# -------------------------------------------------------------
-# MAIN
-
-# Player List
-Computer = Player("Computer")
-Human = Player("David")
-PlayerList = [Computer, Human]
-
-# Game Class
-Poker = Game(PlayerList)
-
-# Simulate a hand for 2 players and show console output
-Poker.startGame()
-
-print("\n--- Table Cards ---")
-for card in Poker.table.tableDeck:
-    print(f"{card.value}{card.suit}{card.img}", end="  ")
-print("\n")
-
-print("--- Player Hands ---")
-for player in PlayerList:
-    hand = "  ".join([f"{card.value}{card.suit}{card.img}" for card in player.playerDeck])
-    print(f"{player.playerName}: {hand}")
-
-# Check winner
-winner = Poker.checkWinner()
-print("\n--- Winner ---")
-print(f"Winner: {winner['winner']}")
-print(f"Reason: {winner['reason']}")

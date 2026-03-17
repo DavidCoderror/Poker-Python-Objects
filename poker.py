@@ -61,6 +61,7 @@ class Player:
             'FlushType': "N/A", 'HighestCardInStraight': 0, 'FlushValues': [],
             'FiveHighestCards': []
         }
+        self.playerCurrency = Currency()
 
     def receiveCard(self, MainDeck):  # Grab a card from MAIN deck and add to PLAYER deck
         newCard = MainDeck.cardDeck.pop()
@@ -77,9 +78,21 @@ class Player:
             'HighCard': 0, 'HighPair': 0, 'HighThree': 0, 'HighFour': 0,
             'LowCard': 0, 'LowPair': 0, 'LowThree': 0,
             'FlushType': "N/A", 'HighestCardInStraight': 0, 'FlushValues': [],
-            'FiveHighestCards': []
+            'FiveHighestCards': [], 'HandValue' : 0
         }
 
+# -------------------------------------------------------------# -------------------------------------------------------------
+# Currency Class
+# -------------------------------------------------------------# -------------------------------------------------------------
+class Currency:
+    def __init__(self):
+        self.currency = 0
+
+    def addCurrency(self, currencyBeingAdded):  # Create 3 cards in deck
+        self.currency += currencyBeingAdded
+
+    def removeCurrency(self, currencyBeingRemoved):  # Grab a card from MAIN deck and add to Table deck=
+        self.currency -= currencyBeingRemoved
 
 # -------------------------------------------------------------# -------------------------------------------------------------
 # Table Class
@@ -112,6 +125,8 @@ class Game:  # The actual Game and Rounds
         self.round = 0
         self.currentTurn = 0
         self.playerFolded = False
+        self.pot = 0
+        self.currentBet = 0
 
         for player in playerNames:  # Add players to the list
             self.players.append(player)
@@ -122,6 +137,8 @@ class Game:  # The actual Game and Rounds
         self.round = 0
         self.playerFolded = False
         self.table.tableDeck = []
+        self.pot = 0
+        self.currentBet = 0
 
         for player in self.players:
             player.playerDeck = []
@@ -129,20 +146,21 @@ class Game:  # The actual Game and Rounds
             player.receiveCard(self.deck)
             player.resetData()
             player.playerDeckValue = 0
+            player.playerCurrency.addCurrency(100)
+
 
         self.table.setupTable(self.deck)
 
     def hit(self):
-        if self.round >= 2:
-            return {"status": "showdown", "state": self.getFinalState()}
+        if self.round == 1:  # TURN
+            self.table.receiveCard(self.deck)
+            return {"status": "continue", "state": self.getStateForPlayer(1)}
 
-        self.table.receiveCard(self.deck)
-        self.round += 1
+        elif self.round == 2:  # RIVER
+            self.table.receiveCard(self.deck)
+            return {"status": "continue", "state": self.getStateForPlayer(1)}
 
-        if self.round == 2:
-            return {"status": "showdown", "state": self.getFinalState()}
-
-        return {"status": "continue", "state": self.getStateForPlayer(1)}  # Assuming player 1 is human
+        return {"status": "showdown", "state": self.getFinalState()}
 
     def fold(self, playerIndex):
         self.playerFolded = True
@@ -162,25 +180,43 @@ class Game:  # The actual Game and Rounds
     def getStateForPlayer(self, playerIndex):  # Grab the State
 
         player = self.players[playerIndex]
+        opponent = self.players[0] if playerIndex == 1 else self.players[1]
 
         return {
             "round": self.round,
             "table": [self.cardToDict(card) for card in self.table.tableDeck],
             "your_cards": [self.cardToDict(card) for card in player.playerDeck],
+            "handValue": player.playerDeckStatsData["HandValue"],
+            "your_currency": player.playerCurrency.currency,
+
+            "opponent_currency": opponent.playerCurrency.currency,
             "opponent_cards": ["🂠", "🂠"]  # hidden cards
+
         }
 
     def getFinalState(self):  # When Cards Revealed at the end
+
         player1 = self.players[0]
         player2 = self.players[1]
+
+        winnerData = self.checkWinner()
 
         return {
             "round": self.round,
             "table": [self.cardToDict(card) for card in self.table.tableDeck],
+
             "player1_cards": [self.cardToDict(card) for card in player1.playerDeck],
             "player2_cards": [self.cardToDict(card) for card in player2.playerDeck],
-        }
 
+            "player1_handValue": player1.playerDeckStatsData["HandValue"],
+            "player2_handValue": player2.playerDeckStatsData["HandValue"],
+
+            "player1_currency": player1.playerCurrency.currency,
+            "player2_currency": player2.playerCurrency.currency,
+
+            "winner": winnerData['winner'],
+            "reason": winnerData['reason']
+        }
 
     # -------------------------------------------------------------# # -------------------------------------------------------------#
     # -------------------------------------------------------------------- We check the winner!# ------------------------------------------------------------- #
@@ -195,14 +231,28 @@ class Game:  # The actual Game and Rounds
         p2_cards = player2.playerDeckStatsData['FiveHighestCards']
         result = {"winner": "?", "reason": "Hand Not Checked"}
 
+        hand_names = {
+            1: "Royal Flush",
+            2: "Straight Flush",
+            3: "Four of a Kind",
+            4: "Full House",
+            5: "Flush",
+            6: "Straight",
+            7: "Three of a Kind",
+            8: "Two Pair",
+            9: "Pair",
+            10: "High Card"
+        }
+
         # Player 1 Wins
         if player1.playerDeckValue < player2.playerDeckValue:
-            result = {"winner": player1.playerName, "reason": "Higher Hand Value"}
+            result = {"winner": player1.playerName, "reason": f"{hand_names[player1.playerDeckValue]} beats {hand_names[player2.playerDeckValue]}"}
             pass
 
         # Player 2 Wins
         elif player1.playerDeckValue > player2.playerDeckValue:
-            result = {"winner": player2.playerName, "reason": "Higher Hand Value"}
+            result = {"winner": player2.playerName, "reason": f"{hand_names[player2.playerDeckValue]} beats {hand_names[player1.playerDeckValue]}"}
+
             pass
 
         # IF hand is the same
@@ -210,115 +260,128 @@ class Game:  # The actual Game and Rounds
             # 1. Straight Flush or Straight
             if player1.playerDeckValue == 2 or player1.playerDeckValue == 6:
                 if player1.playerDeckStatsData['HighestCardInStraight'] > player2.playerDeckStatsData['HighestCardInStraight']:
-                    result = {"winner": player1.playerName, "reason": "Better Straight"}
+                    result = {"winner": player1.playerName,
+                              "reason": f"Better Straight! Top card: {player1.playerDeckStatsData['HighestCardInStraight']}"}
                     pass
                 elif player1.playerDeckStatsData['HighestCardInStraight'] < player2.playerDeckStatsData[
                     'HighestCardInStraight']:
-                    result = {"winner": player2.playerName, "reason": "Better Straight"}
+                    result = {"winner": player2.playerName,
+                              "reason": f"Better Straight! Top card: {player2.playerDeckStatsData['HighestCardInStraight']}"}
                     pass
 
             # 2. Four of a kind
             elif player1.playerDeckValue == 3:
                 if player1.playerDeckStatsData['HighFour'] > player2.playerDeckStatsData['HighFour']:
-                    result = {"winner": player1.playerName, "reason": "Better Four of a Kind"}
+                    result = {"winner": player1.playerName,
+                              "reason": f"Four of a kind! {player1.playerDeckStatsData['HighFour']}s beat {player2.playerDeckStatsData['HighFour']}s"}
                     pass
                 elif player1.playerDeckStatsData['HighFour'] < player2.playerDeckStatsData['HighFour']:
-                    result = {"winner": player2.playerName, "reason": "Better Four of a Kind"}
+                    result = {"winner": player2.playerName,
+                              "reason": f"Four of a kind! {player2.playerDeckStatsData['HighFour']}s beat {player1.playerDeckStatsData['HighFour']}s"}
                     pass
                 else:
                     kicker_winner = self.compareKickers(player1, player2, [player1.playerDeckStatsData['HighFour']] * 4)
                     if kicker_winner == "Tie":
-                        result = {"winner": "Tie!", "reason": "Same Quads + Kicker"}
+                        result = {"winner": "Tie!", "reason": "Same Quads, but better Kicker"}
                     else:
-                        result = {"winner": kicker_winner, "reason": "Same Quads, better kicker"}
+                        result = {"winner": kicker_winner, "reason": "Same Quads, but better kicker"}
 
             # 3. Full House
             elif player1.playerDeckValue == 4:
                 if player1.playerDeckStatsData['HighThree'] > player2.playerDeckStatsData['HighThree']:
-                    result = {"winner": player1.playerName, "reason": "Better Three of a Kind in the full house"}
+                    result = {"winner": player1.playerName,
+                              "reason": f"Full House! Triple {player1.playerDeckStatsData['HighThree']} beats {player2.playerDeckStatsData['HighThree']}"}
                     pass
                 elif player1.playerDeckStatsData['HighThree'] < player2.playerDeckStatsData['HighThree']:
-                    result = {"winner": player2.playerName, "reason": "Better Three of a Kind in the full house"}
+                    result = {"winner": player2.playerName,
+                              "reason": f"Full House! Triple {player2.playerDeckStatsData['HighThree']} beats {player1.playerDeckStatsData['HighThree']}"}
                     pass
                 else:
                     if player1.playerDeckStatsData['HighPair'] > player2.playerDeckStatsData['HighPair']:
-                        result = {"winner": player1.playerName, "reason": "Better Pair in the full house"}
+                        result = {"winner": player1.playerName,
+                                  "reason": f"Full House tie, Pair {player1.playerDeckStatsData['HighPair']} wins"}
                         pass
                     elif player1.playerDeckStatsData['HighPair'] < player2.playerDeckStatsData['HighPair']:
-                        result = {"winner": player2.playerName, "reason": "Better Pair in the full house"}
+                        result = {"winner": player2.playerName,
+                                  "reason": f"Full House tie, Pair {player2.playerDeckStatsData['HighPair']} wins"}
                         pass
 
             # 4. Flush
             elif player1.playerDeckValue == 5:
                 if player1.playerDeckStatsData['FlushValues'] > player2.playerDeckStatsData['FlushValues']:
-                    result = {"winner": player1.playerName, "reason": "Better Flush Hand"}
+                    result = {"winner": player1.playerName,
+                              "reason": f"Flush! High card: {player1.playerDeckStatsData['FlushValues'][0]}"}
                     pass
                 elif player1.playerDeckStatsData['FlushValues'] < player2.playerDeckStatsData['FlushValues']:
-                    result = {"winner": player2.playerName, "reason": "Better Flush Hand"}
+                    result = {"winner": player2.playerName,
+                              "reason": f"Flush! High card: {player2.playerDeckStatsData['FlushValues'][0]}"}
                     pass
 
             # 5. Three of a kind
             elif player1.playerDeckValue == 7:
                 if player1.playerDeckStatsData['HighThree'] > player2.playerDeckStatsData['HighThree']:
-                    result = {"winner": player1.playerName, "reason": "Same Three of a Kind, better kicker"}
+                    result = {"winner": player1.playerName,
+                              "reason": f"Triple {player1.playerDeckStatsData['HighThree']} beats {player2.playerDeckStatsData['HighThree']}"}
                     pass
                 elif player1.playerDeckStatsData['HighThree'] < player2.playerDeckStatsData['HighThree']:
-                    result = {"winner": player2.playerName, "reason": "Same Three of a Kind, better kicker"}
+                    result = {"winner": player2.playerName,
+                              "reason": f"Triple {player2.playerDeckStatsData['HighThree']} beats {player1.playerDeckStatsData['HighThree']}"}
                     pass
                 else:
                     kicker_winner = self.compareKickers(player1, player2, [player1.playerDeckStatsData['HighThree']] * 3)
                     if kicker_winner == "Tie":
                         result = {"winner": "Tie!", "reason": "Same Three of a Kind, better kicker"}
                     else:
-                        result = {"winner": kicker_winner, "reason": "Same Three of a Kind, better kicker"}
+                        result = {"winner": kicker_winner, "reason": f"Triple tie, kicker wins: {kicker_winner}"}
 
             # 6. Two Pair
             elif player1.playerDeckValue == 8:
                 if player1.playerDeckStatsData['HighPair'] > player2.playerDeckStatsData['HighPair']:
-                    result = {"winner": player1.playerName, "reason": "Better Two Pair"}
+                    result = {"winner": player1.playerName, "reason": "Better Two Pair, Higher Pair"}
                     pass
                 elif player1.playerDeckStatsData['HighPair'] < player2.playerDeckStatsData['HighPair']:
-                    result = {"winner": player2.playerName, "reason": "Better Two Pair"}
+                    result = {"winner": "Tie!", "reason": "Two Pair tie, kicker same"}
                     pass
                 else:
                     if player1.playerDeckStatsData['LowPair'] > player2.playerDeckStatsData['LowPair']:
-                        result = {"winner": player1.playerName, "reason": "Better Two Pair"}
+                        result = {"winner": player1.playerName, "reason": "Same High Pair, better Lower pair"}
                         pass
                     elif player1.playerDeckStatsData['LowPair'] < player2.playerDeckStatsData['LowPair']:
-                        result = {"winner": player2.playerName, "reason": "Better Two Pair"}
+                        result = {"winner": player2.playerName, "reason": "Same High Pair, better Lower pair "}
                         pass
                     else:
                         kicker_winner = self.compareKickers(player1, player2, [player1.playerDeckStatsData['HighPair']] * 2 + [player1.playerDeckStatsData['LowPair']] * 2)
                         if kicker_winner == "Tie":
                             result = {"winner": "Tie!", "reason": "Same Two Pair, better kicker"}
                         else:
-                            result = {"winner": kicker_winner, "reason": "Same Two Pair, better kicker"}
+                            result = {"winner": kicker_winner, "reason": f"Two Pair tie, kicker wins: {kicker_winner}"}
 
             # 7. Pair
             elif player1.playerDeckValue == 9:
                 if player1.playerDeckStatsData['HighPair'] > player2.playerDeckStatsData['HighPair']:
-                    result = {"winner": player1.playerName, "reason": "Better Pair"}
+                    result = {"winner": player1.playerName,
+                              "reason": f"Pair {player1.playerDeckStatsData['HighPair']} beats {player2.playerDeckStatsData['HighPair']}"}
                     pass
                 elif player1.playerDeckStatsData['HighPair'] < player2.playerDeckStatsData['HighPair']:
-                    result = {"winner": player2.playerName, "reason": "Better Pair"}
+                    result = {"winner": player2.playerName,
+                              "reason": f"Pair {player2.playerDeckStatsData['HighPair']} beats {player1.playerDeckStatsData['HighPair']}"}
                     pass
                 else:
                     kicker_winner = self.compareKickers( player1,player2,[player1.playerDeckStatsData['HighPair']] * 2)
                     if kicker_winner == "Tie":
                         result = {"winner": "Tie!", "reason": "Same Pairs, better kicker"}
                     else:
-                        result = {"winner": kicker_winner, "reason": "Same Pairs, better kicker"}
+                        result = {"winner": kicker_winner, "reason": f"Pair tie, kicker wins: {kicker_winner}"}
 
             # 8. HighCard
-            elif player1.playerDeckValue == 10:
+            else:
 
                 kicker_winner = self.compareKickers(player1, player2, [])
                 if kicker_winner == "Tie":
-                    result = {"winner": "Tie!", "reason": "Same High Cards"}
+                    result = {"winner": "Tie!",
+                              "reason": f"High Card tie! Top cards: {player1.playerDeckStatsData['FiveHighestCards']}"}
                 else:
-                    result = {"winner": kicker_winner, "reason": "Same High Cards"}
-
-
+                    result = {"winner": kicker_winner, "reason": f"Top card wins: {kicker_winner}"}
 
         return result
 
@@ -339,42 +402,56 @@ class Game:  # The actual Game and Rounds
 
             if self.royalFlushCheck(deck, player):  # 1 Royal Flush - WORKS
                 player.playerDeckValue = 1
+                player.playerDeckStatsData["HandValue"] = 1
                 pass
 
             elif self.straightFlushCheck(deck, player):  # 2 Straight Flush - WORKS
                 player.playerDeckValue = 2
+                player.playerDeckStatsData["HandValue"] = 2
+
                 pass
 
             elif self.countCards(deck, player, 4):  # 3 Four of a kind - WORKS
                 player.playerDeckValue = 3
+                player.playerDeckStatsData["HandValue"] = 3
                 pass
 
             elif self.fullHouse(deck, player):  # 4 Full House - WORKS
                 player.playerDeckValue = 4
+                player.playerDeckStatsData["HandValue"] = 4
                 pass
 
             elif self.flushCheck(deck, player):  # 5 Flush - WORKS
                 player.playerDeckValue = 5
+                player.playerDeckStatsData["HandValue"] = 5
                 pass
 
             elif self.staightCheck(deck, player):  # 6 Straight - WORKS
                 player.playerDeckValue = 6
+                player.playerDeckStatsData["HandValue"] = 6
                 pass
 
             elif self.countCards(deck, player, 3):  # 7 Three of a kind - WORKS
                 player.playerDeckValue = 7
+                player.playerDeckStatsData["HandValue"] = 7
+
                 pass
 
             elif self.countDoublePair(deck, player):  # 8 Two Pairs - WORKS
                 player.playerDeckValue = 8
+                player.playerDeckStatsData["HandValue"] = 8
+
                 pass
 
             elif self.countCards(deck, player, 2):  # 9 One Pair - WORKS
                 player.playerDeckValue = 9
+                player.playerDeckStatsData["HandValue"] = 9
+
                 pass
 
             else:  # 10 High-card
                 player.playerDeckValue = 10
+                player.playerDeckStatsData["HandValue"] = 10
 
     def countCards(self, deck, player, number):  # pairs, Three, four
         values = [card.value for card in deck]
@@ -613,3 +690,58 @@ class Game:  # The actual Game and Rounds
                 return player2.playerName
         return "Tie"
 
+# -------------------------------------------------------------# -------------------------------------------------------------
+# -------------------------------------------------------------# -------------------------------------------------------------
+# -------------------------------------------------------------# -------------------------------------------------------------
+# MAIN - Test 5 Cards Hands
+
+# Create Players
+Computer = Player("Computer")
+Human = Player("David")
+PlayerList = [Computer, Human]
+
+# Initialize Game
+Poker = Game(PlayerList)
+
+# Assign 5-card hands to Table
+Poker.table.tableDeck = [
+
+]
+
+# Assign 5-card hands to players
+Computer.playerDeck = [
+    Card(2, "♠", "🂩"),
+    Card(3, "♠", "🂪"),
+    Card(3, "♠", "🂫"),
+    Card(3, "♠", "🂬"),
+    Card(11, "♠", "🂮"),
+]
+
+Human.playerDeck = [
+    Card(2, "♢", "🃂"),
+    Card(2, "♢", "🃃"),
+    Card(2, "♢", "🃄"),
+    Card(2, "♢", "🃅"),
+    Card(6, "♢", "🂦"),
+]
+
+# Update Hand Values
+Poker.checkDeckValues()
+
+# Show Table
+print("\n--- Table Cards ---")
+for card in Poker.table.tableDeck:
+    print(f"{card.value}{card.suit}{card.img}", end="  ")
+print("\n")
+
+# Show Player Hands
+print("--- Player Hands ---")
+for player in PlayerList:
+    hand = "  ".join([f"{card.value}{card.suit}{card.img}" for card in player.playerDeck])
+    print(f"{player.playerName}: {hand}")
+
+# Check Winner
+winner = Poker.checkWinner()
+print("\n--- Winner ---")
+print(f"Winner: {winner['winner']}")
+print(f"Reason: {winner['reason']}")

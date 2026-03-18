@@ -127,6 +127,8 @@ class Game:
         self.pot = Currency()
         self.pot.resetCurrency()
         self.currentBet = 0
+        self.lastPot = 0
+        self.gameOver = False
 
     # --------------------- Turn Management ---------------------
     def getCurrentPlayer(self):
@@ -136,12 +138,12 @@ class Game:
         self.currentTurn = (self.currentTurn + 1) % len(self.players)
 
     # --------------------- Game Setup ---------------------
-    def newGameSession(self):
+    def startGameSession(self): # When lets sya two players innitally join a match
         for player in self.players:
             player.playerCurrency.setCurrency(100)
-        self.startGame()
+        self.newWholeRound()
 
-    def startGame(self):
+    def newWholeRound(self):
         self.deck = Deck()
         self.round = 0
         self.playerFolded = False
@@ -149,6 +151,8 @@ class Game:
         self.pot.resetCurrency()
         self.currentBet = 0
         self.currentTurn = 0
+        self.gameOver = False
+
 
         for player in self.players:
             player.playerDeck = []
@@ -157,16 +161,22 @@ class Game:
             player.resetData()
             player.playerDeckValue = 0
 
-        self.table.setupTable(self.deck)
-
     def progressRound(self): # Was hit formally
 
         self.round += 1  # Increment round counter
 
+        if self.gameOver:
+            return {"status": "error", "message": "Game already finished"}
+
+        # -----------------PRE FLOP ---------------
+        """""
+        Eszsentially players get their cards already in the startGame Function
+        """
+
         # ------------------ FLOP ------------------
         if self.round == 1:
-            for _ in range(3):
-                self.table.receiveCard(self.deck)
+
+            self.table.setupTable(self.deck)
             self.resetBettingRound()
             self.currentTurn = 0  # start with first player
             return {"status": "flop", "state": self.getStateForPlayer(1)}
@@ -189,10 +199,32 @@ class Game:
         else:
             self.checkDeckValues()
             final_state = self.getFinalState()
-            return {"status": "showdown", "state": final_state}
+
+            winner_name = final_state["winner"]
+            pot_amount = self.pot.getCurrency()
+
+            self.lastPot = pot_amount
+
+            if winner_name != "Tie!":
+                for player in self.players:
+                    if player.playerName == winner_name:
+                        player.playerCurrency.addCurrency(pot_amount)
+            else:
+                split = pot_amount // len(self.players)
+                for player in self.players:
+                    player.playerCurrency.addCurrency(split)
+
+            self.gameOver = True
+
+            # return final state and pot
+            return {"status": "showdown", "state": final_state, "pot_won": pot_amount}
 
     # --------------------- Betting ---------------------
     def bet(self, playerIndex, amount):
+
+        if self.round >= 4:
+            return {"status": "error", "message": "Game already finished"}
+
         if playerIndex != self.currentTurn:
             return {"status": "error",
                     "message": f"Not your turn! It's {self.players[self.currentTurn].playerName}'s turn."}
@@ -205,9 +237,16 @@ class Game:
         player.currentRoundBet = amount
         self.currentBet = amount
         self.nextTurn()
+
+        if self.bettingRoundComplete():
+            return self.progressRound()  # auto-progress and return new state
+
         return {"status": "bet_placed", "player": player.playerName, "amount": amount, "pot": self.pot.getCurrency()}
 
     def raise_bet(self, playerIndex, raiseAmount):
+
+        if self.round >= 4:
+            return {"status": "error", "message": "Game already finished"}
 
         if playerIndex != self.currentTurn:
             return {"status": "error",
@@ -226,9 +265,16 @@ class Game:
         player.currentRoundBet += to_pay
         self.currentBet = newBet
         self.nextTurn()
+
+        if self.bettingRoundComplete():
+            return self.progressRound()  # auto-progress and return new state
+
         return {"status": "raise", "player": player.playerName, "raise_amount": raiseAmount, "total_bet": newBet, "pot": self.pot.getCurrency()}
 
     def call(self, playerIndex):
+
+        if self.round >= 4:
+            return {"status": "error", "message": "Game already finished"}
 
         if playerIndex != self.currentTurn:
             return {"status": "error",
@@ -244,9 +290,17 @@ class Game:
         self.pot.addCurrency(to_call)
         player.currentRoundBet += to_call
         self.nextTurn()
+
+        if self.bettingRoundComplete():
+            return self.progressRound()  # auto-progress and return new state
+
         return {"status": "call", "player": player.playerName, "amount": to_call, "pot": self.pot.getCurrency()}
 
     def fold(self, playerIndex):
+
+        if self.round >= 4:
+            return {"status": "error", "message": "Game already finished"}
+
         self.playerFolded = True
         winnerIndex = 0 if playerIndex == 1 else 1
         self.players[winnerIndex].playerCurrency.addCurrency(self.pot.getCurrency())
@@ -254,10 +308,59 @@ class Game:
         return {"status": "player_folded", "foldedPlayer": self.players[playerIndex].playerName,
                 "winner": self.players[winnerIndex].playerName, "pot": self.players[winnerIndex].playerCurrency.getCurrency()}
 
+    def check(self, playerIndex):
+
+        player = self.players[playerIndex]
+
+        if self.round >= 4:
+            return {"status": "error", "message": "Game already finished"}
+
+
+        if playerIndex != self.currentTurn:
+            return {"status": "error", "message": f"Not your turn! It's {self.players[self.currentTurn].playerName}'s turn."}
+
+        if player.currentRoundBet < self.currentBet:
+            return {"status": "error", "message": "Cannot check, must call or raise."}
+
+        self.nextTurn()
+
+        # Auto-progress if all matched
+        if self.bettingRoundComplete():
+            return self.progressRound()
+
+        return {"status": "check", "player": player.playerName, "pot": self.pot.getCurrency()}
+
+    def all_in(self, playerIndex):
+        player = self.players[playerIndex]
+
+        if self.round >= 4:
+            return {"status": "error", "message": "Game already finished"}
+
+        if playerIndex != self.currentTurn:
+            return {"status": "error",
+                    "message": f"Not your turn! It's {self.players[self.currentTurn].playerName}'s turn."}
+
+        # Full stack as raise amount
+        raiseAmount = player.playerCurrency.getCurrency()
+        result = self.raise_bet(playerIndex, raiseAmount)
+        return result
+
+    def callAllIn(self):
+        result = None
+        while self.round != 4:
+            result = self.progressRound()
+        return result
+
     def resetBettingRound(self):
         self.currentBet = 0
         for player in self.players:
             player.currentRoundBet = 0
+
+    def bettingRoundComplete(self):
+        for player in self.players:
+            if player.currentRoundBet != self.currentBet:
+                return False
+        return True
 
     # --------------------- Game State ---------------------
     def cardToDict(self, card):
@@ -273,7 +376,8 @@ class Game:
             "handValue": player.playerDeckStatsData["HandValue"],
             "your_currency": player.playerCurrency.currency,
             "opponent_currency": opponent.playerCurrency.currency,
-            "opponent_cards": ["🂠", "🂠"]
+            "opponent_cards": ["🂠", "🂠"],
+            "pot": self.pot.getCurrency()
         }
 
     def getFinalState(self):
@@ -290,8 +394,45 @@ class Game:
             "player1_currency": player1.playerCurrency.currency,
             "player2_currency": player2.playerCurrency.currency,
             "winner": winnerData['winner'],
-            "reason": winnerData['reason']
+            "reason": winnerData['reason'],
         }
+
+    def aiAction(self, playerIndex):
+        player = self.players[playerIndex]
+
+        # Evaluate hand strength (already computed later, but we can force it)
+        self.checkDeckValues()
+        strength = player.playerDeckValue  # 1 = best, 10 = worst
+
+        to_call = self.currentBet - player.currentRoundBet
+
+        # Pretty good hand
+        if strength <= 4:  # Full house or better
+            if player.playerCurrency.getCurrency() > 0:
+                return self.all_in(playerIndex)
+            else:
+                return self.call(playerIndex)
+
+        # Decent hand
+        elif strength <= 7:
+            if to_call == 0:
+                return self.bet(playerIndex, 10)
+            else:
+                return self.call(playerIndex)
+
+        # Meh hand
+        elif strength <= 9:
+            if to_call == 0:
+                return self.check(playerIndex)
+            else:
+                return self.call(playerIndex)
+
+        # Trash hand
+        else:
+            if to_call == 0:
+                return self.check(playerIndex)
+            else:
+                return self.call(playerIndex)
 
     # -------------------------------------------------------------# # -------------------------------------------------------------#
     # -------------------------------------------------------------------- We check the winner!# ------------------------------------------------------------- #
@@ -766,38 +907,73 @@ class Game:
 # -------------------------------------------------------------# -------------------------------------------------------------
 # -------------------------------------------------------------# -------------------------------------------------------------
 # -------------------------------------------------------------# -------------------------------------------------------------
-# -----------------------------
-# MAIN - Minimal Round Test with JSON outputs
-# -----------------------------
-
+# ------------------ SETUP ------------------
 Computer = Player("Computer")
 Human = Player("David")
 PlayerList = [Computer, Human]
 
 Poker = Game(PlayerList)
-Poker.startGame()  # Pre-flop deal
 
-# --------------------- Pre-flop ---------------------
-print(Poker.bet(0, 20))   # Computer bets 20
-print(Poker.call(1))      # Human calls 20
-Poker.resetBettingRound()
+Poker.startGameSession()  # Deal pre-flop and give 100 chips each
 
-# --------------------- Flop ---------------------
-print(Poker.progressRound())  # Adds flop card
-print(Poker.bet(0, 10))
-print(Poker.call(1))
-Poker.resetBettingRound()
+human = 1
+computer = 0
 
-# --------------------- Turn ---------------------
-print(Poker.progressRound())  # Adds turn card
-print(Poker.bet(0, 15))
-print(Poker.raise_bet(1, 10))
-print(Poker.call(0))
-Poker.resetBettingRound()
+# ------------------ FLOP ------------------
+flop_state = Poker.progressRound()  # round = 1 → flop dealt
+print("\n=== FLOP DEALT ===")
+print("Table cards:", end=" ")
+for card in Poker.table.tableDeck:
+    print(f"{card.img}({card.value}{card.suit})", end="  ")
+print("\n")
 
-# --------------------- River ---------------------
-print(Poker.progressRound())  # Adds river card
+# ------------------ SMALL BET ------------------
+Poker.currentTurn = human
+bet_result = Poker.bet(human, 10)
+print(f"David bets 10 → {bet_result}")
 
-# --------------------- Showdown ---------------------
-showdown = Poker.progressRound()  # Final state
-print(showdown)
+Poker.currentTurn = computer
+call_result = Poker.call(computer)
+print(f"Computer calls → {call_result}\n")
+
+print(f"Pot after small bet: {Poker.pot.getCurrency()}\n")
+
+# ------------------ TURN ------------------
+print("Turn card added.")
+print("Table now:", end=" ")
+for card in Poker.table.tableDeck:
+    print(f"{card.img}({card.value}{card.suit})", end="  ")
+print("\n")
+
+# ------------------ ALL-IN ------------------
+Poker.currentTurn = human
+all_in_result = Poker.all_in(human)
+print(f"David goes ALL-IN → {all_in_result}")
+
+Poker.currentTurn = computer
+call_result = Poker.call(computer)
+print(f"Computer calls ALL-IN → {call_result}\n")
+
+print(f"Pot after ALL-IN: {Poker.pot.getCurrency()}\n")
+
+# ------------------ RIVER & SHOWDOWN ------------------
+showdown_result = Poker.progressRound()  # This triggers showdown
+final_state = showdown_result['state']   # Extract the inner dict
+
+# ------------------ PRINT RESULTS ------------------
+print("=== FLOP → BET → ALL-IN SHOWDOWN ===\n")
+print("Table cards:", end=" ")
+for card in Poker.table.tableDeck:
+    print(f"{card.img}({card.value}{card.suit})", end="  ")
+print("\n")
+
+for player in Poker.players:
+    print(f"{player.playerName} cards:", end=" ")
+    for card in player.playerDeck:
+        print(f"{card.img}({card.value}{card.suit})", end="  ")
+    print(f"\nCurrency: {player.playerCurrency.getCurrency()}\n")
+
+print(f"Winner: {final_state['winner']}")
+print(f"Reason: {final_state['reason']}")
+print("Pot Won:", showdown_result['pot_won'])
+

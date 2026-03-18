@@ -94,6 +94,15 @@ class Currency:
     def removeCurrency(self, currencyBeingRemoved):  # Grab a card from MAIN deck and add to Table deck=
         self.currency -= currencyBeingRemoved
 
+    def resetCurrency(self):
+        self.currency = 0
+
+    def getCurrency(self):
+        return self.currency
+
+    def setCurrency(self, amount):
+        self.currency = amount
+
 # -------------------------------------------------------------# -------------------------------------------------------------
 # Table Class
 # -------------------------------------------------------------# -------------------------------------------------------------
@@ -125,11 +134,16 @@ class Game:  # The actual Game and Rounds
         self.round = 0
         self.currentTurn = 0
         self.playerFolded = False
-        self.pot = 0
-        self.currentBet = 0
+        self.pot = Currency()
+        self.pot.resetCurrency()
 
         for player in playerNames:  # Add players to the list
             self.players.append(player)
+
+    def newGameSession(self):  # Lets say to begin a long lien of matches
+        for player in self.players:
+            player.playerCurrency.setCurrency(100)
+        self.startGame()  # Start the new round
 
     def startGame(self):  # Reset and Setups
 
@@ -137,7 +151,7 @@ class Game:  # The actual Game and Rounds
         self.round = 0
         self.playerFolded = False
         self.table.tableDeck = []
-        self.pot = 0
+        self.pot.resetCurrency()
         self.currentBet = 0
 
         for player in self.players:
@@ -146,29 +160,84 @@ class Game:  # The actual Game and Rounds
             player.receiveCard(self.deck)
             player.resetData()
             player.playerDeckValue = 0
-            player.playerCurrency.addCurrency(100)
-
 
         self.table.setupTable(self.deck)
 
-    def hit(self):
-        if self.round == 1:  # TURN
-            self.table.receiveCard(self.deck)
-            return {"status": "continue", "state": self.getStateForPlayer(1)}
+    #-------------------------------------------------------------------------------------------#
 
-        elif self.round == 2:  # RIVER
-            self.table.receiveCard(self.deck)
-            return {"status": "continue", "state": self.getStateForPlayer(1)}
+    # Player places a bet
+    def bet(self, playerIndex, amount):
+        player = self.players[playerIndex]
+        if amount > player.playerCurrency.currency:
+            amount = player.playerCurrency.currency  # All-in if not enough
 
-        return {"status": "showdown", "state": self.getFinalState()}
+        player.playerCurrency.removeCurrency(amount)
+        self.pot.addCurrency(amount)
+        self.currentBet = amount  # Current bet for opponent to match
 
+        return {
+            "status": "bet_placed",
+            "player": player.playerName,
+            "amount": amount,
+            "pot": self.pot.getCurrency()
+        }
+
+    # Player raises the current bet
+    def raise_bet(self, playerIndex, raiseAmount):
+        player = self.players[playerIndex]
+
+        # Total amount to put in the pot
+        totalBet = self.currentBet + raiseAmount
+
+        if totalBet > player.playerCurrency.currency:
+            totalBet = player.playerCurrency.currency  # all-in if not enough
+
+        # Deduct currency from player and add to pot
+        player.playerCurrency.removeCurrency(totalBet)
+        self.pot.addCurrency(totalBet)
+
+        # Update current bet
+        self.currentBet = totalBet
+
+        return {
+            "status": "raise",
+            "player": player.playerName,
+            "raise_amount": raiseAmount,
+            "total_bet": totalBet,
+            "pot": self.pot.getCurrency()
+        }
+
+    # Player calls the current bet
+    def call(self, playerIndex):
+        player = self.players[playerIndex]
+        to_call = self.currentBet
+        if player.playerCurrency.currency < to_call:
+            to_call = player.playerCurrency.currency  # All-in if not enough
+
+        player.playerCurrency.removeCurrency(to_call)
+        self.pot.addCurrency(to_call)
+
+        return {
+            "status": "call",
+            "player": player.playerName,
+            "amount": to_call,
+            "pot": self.pot.getCurrency()
+        }
+
+    # Player folds
     def fold(self, playerIndex):
         self.playerFolded = True
+        winnerIndex = 0 if playerIndex == 1 else 1
+        self.players[winnerIndex].playerCurrency.addCurrency(self.pot.getCurrency())
+        self.pot.resetCurrency()
+
         return {
-            "status": "player_folded",
-            "foldedPlayer": self.players[playerIndex].playerName,
-            "state": self.getStateForPlayer(1)
-        }
+                   "status": "player_folded",
+                   "foldedPlayer": self.players[playerIndex].playerName,
+                   "winner": self.players[winnerIndex].playerName,
+                   "pot": self.players[winnerIndex].playerCurrency.getCurrency()
+               }
+    #------------------------------------------------------------------------------------#
 
     def cardToDict(self, card):
         return {
@@ -227,8 +296,6 @@ class Game:  # The actual Game and Rounds
         player1 = self.players[0]
         player2 = self.players[1]
 
-        p1_cards = player1.playerDeckStatsData['FiveHighestCards']
-        p2_cards = player2.playerDeckStatsData['FiveHighestCards']
         result = {"winner": "?", "reason": "Hand Not Checked"}
 
         hand_names = {
@@ -745,3 +812,20 @@ winner = Poker.checkWinner()
 print("\n--- Winner ---")
 print(f"Winner: {winner['winner']}")
 print(f"Reason: {winner['reason']}")
+
+
+# Betting System
+Poker.newGameSession()
+
+
+# Example Betting Round
+print(Poker.bet(0, 20))  # Computer bets 20
+print(Poker.call(1))     # Human calls 20
+
+print("Pot:", Poker.pot.getCurrency())  # Pot should now be 40
+
+print(Poker.bet(0, 10))       # Computer bets 10
+print(Poker.raise_bet(1, 15)) # David raises 15 (total 25)
+print(Poker.call(0))           # Computer calls 25
+
+print("Pot after second round:", Poker.pot.getCurrency())

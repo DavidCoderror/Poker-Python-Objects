@@ -52,5 +52,5 @@ We spent the whole week studying and working on other projects in our classes. E
 20Th Update (16th March) : Hand Value is now trnamsitted on the site!
 
 21st Update (17th March) : Fixed acouple of errors, added lines to the reason on how players has won, also starung to ad dbetting
-
+22nd Update (17Th March) : Added Bettin, Raise, Fold, Call mechanics to the game
 

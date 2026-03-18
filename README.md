@@ -49,6 +49,7 @@ We spent the whole week studying and working on other projects in our classes. E
 --------------------------------------------------------------------------------------------------------Week 9?
 
 19Th Update (16th March): Code is now good Interface to play a basic game on website. Logic errors is also fixed
+
 20Th Update (16th March) : Hand Value is now trnamsitted on the site!
 
 21st Update (17th March) : Fixed acouple of errors, added lines to the reason on how players has won, also starung to ad dbetting
@@ -56,4 +57,6 @@ We spent the whole week studying and working on other projects in our classes. E
 22nd Update (17Th March) : Added Bettin, Raise, Fold, Call mechanics to the game
 
 23rd Update (18th Match) : Round System implemented, ass round rpogress, we get the new state
+
+24TH Update (18th March) : Pot has been fixed, it shouyld all be woreking now, added a couple extra fucntions as well like the Fake AI for now.
 

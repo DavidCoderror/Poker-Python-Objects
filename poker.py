@@ -3,36 +3,30 @@
 import random
 from collections import Counter
 
-
-# -------------------------------------------------------------# -------------------------------------------------------------
-
-
 # -------------------------------------------------------------# -------------------------------------------------------------
 # Card Class
 # -------------------------------------------------------------# -------------------------------------------------------------
-
 class Card:
-    def __init__(self, value, suit, img):  # Initialization (What does a card holds)
+    def __init__(self, value, suit, img):
         self.value = value
         self.suit = suit
         self.img = img
 
-    def __str__(self):  # To print the object when called ----> print(Card)
-        return f"{self.value}{self.suit}{self.img}"  # To Show the card
-
+    def __str__(self):
+        return f"{self.value}{self.suit}{self.img}"
 
 # -------------------------------------------------------------# -------------------------------------------------------------
 # Deck Class
 # -------------------------------------------------------------# -------------------------------------------------------------
 class Deck:
-    def __init__(self):  # A Deck holds Cards
+    def __init__(self):
         self.cardDeck = []
-        self.createDeck()  # Call function when initialized
+        self.createDeck()
 
-    def createDeck(self):  # Creating the Main Deck
-        cardValues = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]  # There are 14 Values
-        cardSuit = ["♢", "♡", "♠", "♣"]  # There Are Four Suits
-        cardImage = ["🃂", "🃃", "🃄", "🃅", "🂦", '🂧', "🂨", '🂩', "🂪", "🂫", "🂬", "🂮", "🂾"]  # There are 14 Images
+    def createDeck(self):
+        cardValues = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+        cardSuit = ["♢", "♡", "♠", "♣"]
+        cardImage = ["🃂", "🃃", "🃄", "🃅", "🂦", '🂧', "🂨", '🂩', "🂪", "🂫", "🂬", "🂮", "🂾"]
 
         for suit in cardSuit:
             for value in cardValues:
@@ -45,40 +39,38 @@ class Deck:
         for value, suit, img in customDeck:
             self.cardDeck.append(Card(value, suit, img))
 
-
 # -------------------------------------------------------------# -------------------------------------------------------------
 # Player Class
 # -------------------------------------------------------------# -------------------------------------------------------------
-
 class Player:
-    def __init__(self, name):  # A player holds a deck
+    def __init__(self, name):
         self.playerName = name
         self.playerDeck = []
         self.playerDeckValue = 0
         self.playerDeckStatsData = {
-            'HighCard': 0, 'HighPair': 0, 'HighThree': 0, 'HighFour': 0,  # Highs
-            'LowCard': 0, 'LowPair': 0, 'LowThree': 0,  # lows
+            'HighCard': 0, 'HighPair': 0, 'HighThree': 0, 'HighFour': 0,
+            'LowCard': 0, 'LowPair': 0, 'LowThree': 0,
             'FlushType': "N/A", 'HighestCardInStraight': 0, 'FlushValues': [],
-            'FiveHighestCards': []
+            'FiveHighestCards': [], 'HandValue': 0
         }
         self.playerCurrency = Currency()
+        self.currentRoundBet = 0
 
-    def receiveCard(self, MainDeck):  # Grab a card from MAIN deck and add to PLAYER deck
+    def receiveCard(self, MainDeck):
         newCard = MainDeck.cardDeck.pop()
-        self.playerDeck.append(newCard)  # We get a new card
-        self.playerDeck.sort(key=lambda card: card.value)  # We sort the new Card
+        self.playerDeck.append(newCard)
+        self.playerDeck.sort(key=lambda card: card.value)
 
     def grabFiveHighestCards(self, deck):
-        reversedDeck = sorted(deck, key=lambda card: card.value, reverse=True)  # Reverse the deck
-        theFiveHighestCards = reversedDeck[:5]  # Grab First 5 cards
-        self.playerDeckStatsData['FiveHighestCards'] = [card.value for card in theFiveHighestCards] # Store Data
+        reversedDeck = sorted(deck, key=lambda card: card.value, reverse=True)
+        self.playerDeckStatsData['FiveHighestCards'] = [card.value for card in reversedDeck[:5]]
 
     def resetData(self):
         self.playerDeckStatsData = {
             'HighCard': 0, 'HighPair': 0, 'HighThree': 0, 'HighFour': 0,
             'LowCard': 0, 'LowPair': 0, 'LowThree': 0,
             'FlushType': "N/A", 'HighestCardInStraight': 0, 'FlushValues': [],
-            'FiveHighestCards': [], 'HandValue' : 0
+            'FiveHighestCards': [], 'HandValue': 0
         }
 
 # -------------------------------------------------------------# -------------------------------------------------------------
@@ -88,10 +80,10 @@ class Currency:
     def __init__(self):
         self.currency = 0
 
-    def addCurrency(self, currencyBeingAdded):  # Create 3 cards in deck
+    def addCurrency(self, currencyBeingAdded):
         self.currency += currencyBeingAdded
 
-    def removeCurrency(self, currencyBeingRemoved):  # Grab a card from MAIN deck and add to Table deck=
+    def removeCurrency(self, currencyBeingRemoved):
         self.currency -= currencyBeingRemoved
 
     def resetCurrency(self):
@@ -110,49 +102,53 @@ class Table:
     def __init__(self):
         self.tableDeck = []
 
-    def setupTable(self, MainDeck):  # Create 3 cards in deck
-
+    def setupTable(self, MainDeck):
         try:
-            while len(self.tableDeck) < 3:  # Create the 3 Starting Cards
+            while len(self.tableDeck) < 3:
                 self.receiveCard(MainDeck)
         except:
             print("Table Setup has encountered an issue")
 
-    def receiveCard(self, MainDeck):  # Grab a card from MAIN deck and add to Table deck
+    def receiveCard(self, MainDeck):
         newCard = MainDeck.cardDeck.pop()
         self.tableDeck.append(newCard)
-
 
 # -------------------------------------------------------------# -------------------------------------------------------------
 # Game Class
 # -------------------------------------------------------------# -------------------------------------------------------------
-class Game:  # The actual Game and Rounds
+class Game:
     def __init__(self, playerNames):
         self.deck = Deck()
         self.table = Table()
-        self.players = []
+        self.players = playerNames
         self.round = 0
         self.currentTurn = 0
         self.playerFolded = False
         self.pot = Currency()
         self.pot.resetCurrency()
+        self.currentBet = 0
 
-        for player in playerNames:  # Add players to the list
-            self.players.append(player)
+    # --------------------- Turn Management ---------------------
+    def getCurrentPlayer(self):
+        return self.players[self.currentTurn]
 
-    def newGameSession(self):  # Lets say to begin a long lien of matches
+    def nextTurn(self):
+        self.currentTurn = (self.currentTurn + 1) % len(self.players)
+
+    # --------------------- Game Setup ---------------------
+    def newGameSession(self):
         for player in self.players:
             player.playerCurrency.setCurrency(100)
-        self.startGame()  # Start the new round
+        self.startGame()
 
-    def startGame(self):  # Reset and Setups
-
+    def startGame(self):
         self.deck = Deck()
         self.round = 0
         self.playerFolded = False
         self.table.tableDeck = []
         self.pot.resetCurrency()
         self.currentBet = 0
+        self.currentTurn = 0
 
         for player in self.players:
             player.playerDeck = []
@@ -163,126 +159,136 @@ class Game:  # The actual Game and Rounds
 
         self.table.setupTable(self.deck)
 
-    #-------------------------------------------------------------------------------------------#
+    def progressRound(self): # Was hit formally
 
-    # Player places a bet
+        self.round += 1  # Increment round counter
+
+        # ------------------ FLOP ------------------
+        if self.round == 1:
+            for _ in range(3):
+                self.table.receiveCard(self.deck)
+            self.resetBettingRound()
+            self.currentTurn = 0  # start with first player
+            return {"status": "flop", "state": self.getStateForPlayer(1)}
+
+        # ------------------ TURN ------------------
+        elif self.round == 2:
+            self.table.receiveCard(self.deck)
+            self.resetBettingRound()
+            self.currentTurn = 0
+            return {"status": "turn", "state": self.getStateForPlayer(1)}
+
+        # ------------------ RIVER ------------------
+        elif self.round == 3:
+            self.table.receiveCard(self.deck)
+            self.resetBettingRound()
+            self.currentTurn = 0
+            return {"status": "river", "state": self.getStateForPlayer(1)}
+
+        # ------------------ SHOWDOWN ------------------
+        else:
+            self.checkDeckValues()
+            final_state = self.getFinalState()
+            return {"status": "showdown", "state": final_state}
+
+    # --------------------- Betting ---------------------
     def bet(self, playerIndex, amount):
+        if playerIndex != self.currentTurn:
+            return {"status": "error",
+                    "message": f"Not your turn! It's {self.players[self.currentTurn].playerName}'s turn."}
+
         player = self.players[playerIndex]
         if amount > player.playerCurrency.currency:
-            amount = player.playerCurrency.currency  # All-in if not enough
-
+            amount = player.playerCurrency.currency
         player.playerCurrency.removeCurrency(amount)
         self.pot.addCurrency(amount)
-        self.currentBet = amount  # Current bet for opponent to match
+        player.currentRoundBet = amount
+        self.currentBet = amount
+        self.nextTurn()
+        return {"status": "bet_placed", "player": player.playerName, "amount": amount, "pot": self.pot.getCurrency()}
 
-        return {
-            "status": "bet_placed",
-            "player": player.playerName,
-            "amount": amount,
-            "pot": self.pot.getCurrency()
-        }
-
-    # Player raises the current bet
     def raise_bet(self, playerIndex, raiseAmount):
+
+        if playerIndex != self.currentTurn:
+            return {"status": "error",
+                    "message": f"Not your turn! It's {self.players[self.currentTurn].playerName}'s turn."}
+
         player = self.players[playerIndex]
+        newBet = self.currentBet + raiseAmount
+        to_pay = newBet - player.currentRoundBet
 
-        # Total amount to put in the pot
-        totalBet = self.currentBet + raiseAmount
+        if to_pay > player.playerCurrency.currency:
+            to_pay = player.playerCurrency.currency
+            newBet = player.currentRoundBet + to_pay
 
-        if totalBet > player.playerCurrency.currency:
-            totalBet = player.playerCurrency.currency  # all-in if not enough
+        player.playerCurrency.removeCurrency(to_pay)
+        self.pot.addCurrency(to_pay)
+        player.currentRoundBet += to_pay
+        self.currentBet = newBet
+        self.nextTurn()
+        return {"status": "raise", "player": player.playerName, "raise_amount": raiseAmount, "total_bet": newBet, "pot": self.pot.getCurrency()}
 
-        # Deduct currency from player and add to pot
-        player.playerCurrency.removeCurrency(totalBet)
-        self.pot.addCurrency(totalBet)
-
-        # Update current bet
-        self.currentBet = totalBet
-
-        return {
-            "status": "raise",
-            "player": player.playerName,
-            "raise_amount": raiseAmount,
-            "total_bet": totalBet,
-            "pot": self.pot.getCurrency()
-        }
-
-    # Player calls the current bet
     def call(self, playerIndex):
-        player = self.players[playerIndex]
-        to_call = self.currentBet
-        if player.playerCurrency.currency < to_call:
-            to_call = player.playerCurrency.currency  # All-in if not enough
 
+        if playerIndex != self.currentTurn:
+            return {"status": "error",
+                    "message": f"Not your turn! It's {self.players[self.currentTurn].playerName}'s turn."}
+
+        player = self.players[playerIndex]
+        to_call = self.currentBet - player.currentRoundBet
+        if to_call < 0:
+            to_call = 0
+        if to_call > player.playerCurrency.currency:
+            to_call = player.playerCurrency.currency
         player.playerCurrency.removeCurrency(to_call)
         self.pot.addCurrency(to_call)
+        player.currentRoundBet += to_call
+        self.nextTurn()
+        return {"status": "call", "player": player.playerName, "amount": to_call, "pot": self.pot.getCurrency()}
 
-        return {
-            "status": "call",
-            "player": player.playerName,
-            "amount": to_call,
-            "pot": self.pot.getCurrency()
-        }
-
-    # Player folds
     def fold(self, playerIndex):
         self.playerFolded = True
         winnerIndex = 0 if playerIndex == 1 else 1
         self.players[winnerIndex].playerCurrency.addCurrency(self.pot.getCurrency())
         self.pot.resetCurrency()
+        return {"status": "player_folded", "foldedPlayer": self.players[playerIndex].playerName,
+                "winner": self.players[winnerIndex].playerName, "pot": self.players[winnerIndex].playerCurrency.getCurrency()}
 
-        return {
-                   "status": "player_folded",
-                   "foldedPlayer": self.players[playerIndex].playerName,
-                   "winner": self.players[winnerIndex].playerName,
-                   "pot": self.players[winnerIndex].playerCurrency.getCurrency()
-               }
-    #------------------------------------------------------------------------------------#
+    def resetBettingRound(self):
+        self.currentBet = 0
+        for player in self.players:
+            player.currentRoundBet = 0
 
+    # --------------------- Game State ---------------------
     def cardToDict(self, card):
-        return {
-            "value": card.value,
-            "suit": card.suit,
-            "img": card.img
-        }
+        return {"value": card.value, "suit": card.suit, "img": card.img}
 
-    def getStateForPlayer(self, playerIndex):  # Grab the State
-
+    def getStateForPlayer(self, playerIndex):
         player = self.players[playerIndex]
         opponent = self.players[0] if playerIndex == 1 else self.players[1]
-
         return {
             "round": self.round,
             "table": [self.cardToDict(card) for card in self.table.tableDeck],
             "your_cards": [self.cardToDict(card) for card in player.playerDeck],
             "handValue": player.playerDeckStatsData["HandValue"],
             "your_currency": player.playerCurrency.currency,
-
             "opponent_currency": opponent.playerCurrency.currency,
-            "opponent_cards": ["🂠", "🂠"]  # hidden cards
-
+            "opponent_cards": ["🂠", "🂠"]
         }
 
-    def getFinalState(self):  # When Cards Revealed at the end
-
+    def getFinalState(self):
         player1 = self.players[0]
         player2 = self.players[1]
-
         winnerData = self.checkWinner()
-
         return {
             "round": self.round,
             "table": [self.cardToDict(card) for card in self.table.tableDeck],
-
             "player1_cards": [self.cardToDict(card) for card in player1.playerDeck],
             "player2_cards": [self.cardToDict(card) for card in player2.playerDeck],
-
             "player1_handValue": player1.playerDeckStatsData["HandValue"],
             "player2_handValue": player2.playerDeckStatsData["HandValue"],
-
             "player1_currency": player1.playerCurrency.currency,
             "player2_currency": player2.playerCurrency.currency,
-
             "winner": winnerData['winner'],
             "reason": winnerData['reason']
         }
@@ -760,72 +766,38 @@ class Game:  # The actual Game and Rounds
 # -------------------------------------------------------------# -------------------------------------------------------------
 # -------------------------------------------------------------# -------------------------------------------------------------
 # -------------------------------------------------------------# -------------------------------------------------------------
-# MAIN - Test 5 Cards Hands
+# -----------------------------
+# MAIN - Minimal Round Test with JSON outputs
+# -----------------------------
 
-# Create Players
 Computer = Player("Computer")
 Human = Player("David")
 PlayerList = [Computer, Human]
 
-# Initialize Game
 Poker = Game(PlayerList)
+Poker.startGame()  # Pre-flop deal
 
-# Assign 5-card hands to Table
-Poker.table.tableDeck = [
+# --------------------- Pre-flop ---------------------
+print(Poker.bet(0, 20))   # Computer bets 20
+print(Poker.call(1))      # Human calls 20
+Poker.resetBettingRound()
 
-]
+# --------------------- Flop ---------------------
+print(Poker.progressRound())  # Adds flop card
+print(Poker.bet(0, 10))
+print(Poker.call(1))
+Poker.resetBettingRound()
 
-# Assign 5-card hands to players
-Computer.playerDeck = [
-    Card(2, "♠", "🂩"),
-    Card(3, "♠", "🂪"),
-    Card(3, "♠", "🂫"),
-    Card(3, "♠", "🂬"),
-    Card(11, "♠", "🂮"),
-]
+# --------------------- Turn ---------------------
+print(Poker.progressRound())  # Adds turn card
+print(Poker.bet(0, 15))
+print(Poker.raise_bet(1, 10))
+print(Poker.call(0))
+Poker.resetBettingRound()
 
-Human.playerDeck = [
-    Card(2, "♢", "🃂"),
-    Card(2, "♢", "🃃"),
-    Card(2, "♢", "🃄"),
-    Card(2, "♢", "🃅"),
-    Card(6, "♢", "🂦"),
-]
+# --------------------- River ---------------------
+print(Poker.progressRound())  # Adds river card
 
-# Update Hand Values
-Poker.checkDeckValues()
-
-# Show Table
-print("\n--- Table Cards ---")
-for card in Poker.table.tableDeck:
-    print(f"{card.value}{card.suit}{card.img}", end="  ")
-print("\n")
-
-# Show Player Hands
-print("--- Player Hands ---")
-for player in PlayerList:
-    hand = "  ".join([f"{card.value}{card.suit}{card.img}" for card in player.playerDeck])
-    print(f"{player.playerName}: {hand}")
-
-# Check Winner
-winner = Poker.checkWinner()
-print("\n--- Winner ---")
-print(f"Winner: {winner['winner']}")
-print(f"Reason: {winner['reason']}")
-
-
-# Betting System
-Poker.newGameSession()
-
-
-# Example Betting Round
-print(Poker.bet(0, 20))  # Computer bets 20
-print(Poker.call(1))     # Human calls 20
-
-print("Pot:", Poker.pot.getCurrency())  # Pot should now be 40
-
-print(Poker.bet(0, 10))       # Computer bets 10
-print(Poker.raise_bet(1, 15)) # David raises 15 (total 25)
-print(Poker.call(0))           # Computer calls 25
-
-print("Pot after second round:", Poker.pot.getCurrency())
+# --------------------- Showdown ---------------------
+showdown = Poker.progressRound()  # Final state
+print(showdown)

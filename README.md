@@ -55,3 +55,5 @@ We spent the whole week studying and working on other projects in our classes. E
 
 22nd Update (17Th March) : Added Bettin, Raise, Fold, Call mechanics to the game
 
+23rd Update (18th Match) : Round System implemented, ass round rpogress, we get the new state
+

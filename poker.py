@@ -3,6 +3,7 @@
 import random
 from collections import Counter
 
+
 # -------------------------------------------------------------# -------------------------------------------------------------
 # Card Class
 # -------------------------------------------------------------# -------------------------------------------------------------
@@ -14,6 +15,7 @@ class Card:
 
     def __str__(self):
         return f"{self.value}{self.suit}{self.img}"
+
 
 # -------------------------------------------------------------# -------------------------------------------------------------
 # Deck Class
@@ -38,6 +40,7 @@ class Deck:
         self.cardDeck = []
         for value, suit, img in customDeck:
             self.cardDeck.append(Card(value, suit, img))
+
 
 # -------------------------------------------------------------# -------------------------------------------------------------
 # Player Class
@@ -73,6 +76,7 @@ class Player:
             'FiveHighestCards': [], 'HandValue': 0
         }
 
+
 # -------------------------------------------------------------# -------------------------------------------------------------
 # Currency Class
 # -------------------------------------------------------------# -------------------------------------------------------------
@@ -95,6 +99,7 @@ class Currency:
     def setCurrency(self, amount):
         self.currency = amount
 
+
 # -------------------------------------------------------------# -------------------------------------------------------------
 # Table Class
 # -------------------------------------------------------------# -------------------------------------------------------------
@@ -112,6 +117,7 @@ class Table:
     def receiveCard(self, MainDeck):
         newCard = MainDeck.cardDeck.pop()
         self.tableDeck.append(newCard)
+
 
 # -------------------------------------------------------------# -------------------------------------------------------------
 # Game Class
@@ -138,7 +144,7 @@ class Game:
         self.currentTurn = (self.currentTurn + 1) % len(self.players)
 
     # --------------------- Game Setup ---------------------
-    def startGameSession(self): # When lets sya two players innitally join a match
+    def startGameSession(self):  # When lets sya two players innitally join a match
         for player in self.players:
             player.playerCurrency.setCurrency(100)
         self.newWholeRound()
@@ -153,7 +159,6 @@ class Game:
         self.currentTurn = 0
         self.gameOver = False
 
-
         for player in self.players:
             player.playerDeck = []
             player.receiveCard(self.deck)
@@ -161,7 +166,7 @@ class Game:
             player.resetData()
             player.playerDeckValue = 0
 
-    def progressRound(self): # Was hit formally
+    def progressRound(self):  # Was hit formally
 
         self.round += 1  # Increment round counter
 
@@ -269,7 +274,8 @@ class Game:
         if self.bettingRoundComplete():
             return self.progressRound()  # auto-progress and return new state
 
-        return {"status": "raise", "player": player.playerName, "raise_amount": raiseAmount, "total_bet": newBet, "pot": self.pot.getCurrency()}
+        return {"status": "raise", "player": player.playerName, "raise_amount": raiseAmount, "total_bet": newBet,
+                "pot": self.pot.getCurrency()}
 
     def call(self, playerIndex):
 
@@ -306,7 +312,8 @@ class Game:
         self.players[winnerIndex].playerCurrency.addCurrency(self.pot.getCurrency())
         self.pot.resetCurrency()
         return {"status": "player_folded", "foldedPlayer": self.players[playerIndex].playerName,
-                "winner": self.players[winnerIndex].playerName, "pot": self.players[winnerIndex].playerCurrency.getCurrency()}
+                "winner": self.players[winnerIndex].playerName,
+                "pot": self.players[winnerIndex].playerCurrency.getCurrency()}
 
     def check(self, playerIndex):
 
@@ -315,9 +322,9 @@ class Game:
         if self.round >= 4:
             return {"status": "error", "message": "Game already finished"}
 
-
         if playerIndex != self.currentTurn:
-            return {"status": "error", "message": f"Not your turn! It's {self.players[self.currentTurn].playerName}'s turn."}
+            return {"status": "error",
+                    "message": f"Not your turn! It's {self.players[self.currentTurn].playerName}'s turn."}
 
         if player.currentRoundBet < self.currentBet:
             return {"status": "error", "message": "Cannot check, must call or raise."}
@@ -377,6 +384,7 @@ class Game:
             "your_currency": player.playerCurrency.currency,
             "opponent_currency": opponent.playerCurrency.currency,
             "opponent_cards": ["🂠", "🂠"],
+            "player_chance": self.estimateWinProbability(1),
             "pot": self.pot.getCurrency()
         }
 
@@ -434,6 +442,65 @@ class Game:
             else:
                 return self.call(playerIndex)
 
+    # --------------------- Win Probability ---------------------
+    def estimateWinProbability(self, playerIndex, simulations=5000):
+        player = self.players[playerIndex]
+        wins = 0
+
+        # Known cards: player's hand + table
+        known_cards = player.playerDeck + self.table.tableDeck
+        known_set = {(c.value, c.suit) for c in known_cards}
+
+        # Build remaining deck
+        full_deck = [(v, s) for v in range(2, 15) for s in ["♢", "♡", "♠", "♣"]]
+        remaining_deck = [c for c in full_deck if c not in known_set]
+
+        for _ in range(simulations):
+            random.shuffle(remaining_deck)
+
+            # Deal random opponent hand (2 cards)
+            opp_hand = [Card(*remaining_deck[0], ''), Card(*remaining_deck[1], '')]
+
+            # Complete table if needed
+            table_needed = 5 - len(self.table.tableDeck)
+            table_cards = self.table.tableDeck.copy() + [Card(*remaining_deck[i + 2], '') for i in range(table_needed)]
+
+            # Evaluate hands
+            temp_player = player.playerDeck + table_cards
+            temp_opponent = opp_hand + table_cards
+
+            # Temporary stats containers
+            temp_player_stats = Player("temp")
+            temp_player_stats.playerDeck = temp_player
+            temp_opponent_stats = Player("temp")
+            temp_opponent_stats.playerDeck = temp_opponent
+
+            # Evaluate hand values
+            temp_game = Game([temp_player_stats, temp_opponent_stats])
+            temp_game.table.tableDeck = []
+            temp_game.checkDeckValues()
+
+            if temp_player_stats.playerDeckValue < temp_opponent_stats.playerDeckValue:
+                wins += 1
+
+        probability = wins / simulations
+        probability = max(probability, 0.05)
+        probability = round(probability, 2)
+        probabilityMessage = round(probability * 100)
+
+
+        if probability >= 0.8:
+            message = "Avec une probabilité de {}%, vous devriez miser ALL-IN. Ton mains est vraiment bon!".format(probabilityMessage)
+        elif probability >= 0.4:
+            message = "Avec une probabilité de {}%, vous pouvez miser un raise. Ton mains est bon!".format(probabilityMessage)
+        elif probability >= 0.2:
+            message = "Avec une probabilité de {}%, vous devriez checker! ".format(probabilityMessage)
+        else:
+            message = "Avec une probabilité de {}%, vous devriez checker ou coucher. Joue pas trop confidant!".format(probabilityMessage)
+        print(message)
+        return {"win": probability, "Action": message}
+
+
     # -------------------------------------------------------------# # -------------------------------------------------------------#
     # -------------------------------------------------------------------- We check the winner!# ------------------------------------------------------------- #
     # -------------------------------------------------------------# # -------------------------------------------------------------#
@@ -460,12 +527,14 @@ class Game:
 
         # Player 1 Wins
         if player1.playerDeckValue < player2.playerDeckValue:
-            result = {"winner": player1.playerName, "reason": f"{hand_names[player1.playerDeckValue]} beats {hand_names[player2.playerDeckValue]}"}
+            result = {"winner": player1.playerName,
+                      "reason": f"{hand_names[player1.playerDeckValue]} beats {hand_names[player2.playerDeckValue]}"}
             pass
 
         # Player 2 Wins
         elif player1.playerDeckValue > player2.playerDeckValue:
-            result = {"winner": player2.playerName, "reason": f"{hand_names[player2.playerDeckValue]} beats {hand_names[player1.playerDeckValue]}"}
+            result = {"winner": player2.playerName,
+                      "reason": f"{hand_names[player2.playerDeckValue]} beats {hand_names[player1.playerDeckValue]}"}
 
             pass
 
@@ -473,7 +542,8 @@ class Game:
         else:
             # 1. Straight Flush or Straight
             if player1.playerDeckValue == 2 or player1.playerDeckValue == 6:
-                if player1.playerDeckStatsData['HighestCardInStraight'] > player2.playerDeckStatsData['HighestCardInStraight']:
+                if player1.playerDeckStatsData['HighestCardInStraight'] > player2.playerDeckStatsData[
+                    'HighestCardInStraight']:
                     result = {"winner": player1.playerName,
                               "reason": f"Better Straight! Top card: {player1.playerDeckStatsData['HighestCardInStraight']}"}
                     pass
@@ -496,7 +566,7 @@ class Game:
                 else:
                     kicker_winner = self.compareKickers(player1, player2, [player1.playerDeckStatsData['HighFour']] * 4)
                     if kicker_winner == "Tie":
-                        result = {"winner": "Tie!", "reason": "Same Quads, but better Kicker"}
+                        result = {"winner": "Tie!", "reason": "Same Quads, Same Kickers"}
                     else:
                         result = {"winner": kicker_winner, "reason": "Same Quads, but better kicker"}
 
@@ -542,9 +612,10 @@ class Game:
                               "reason": f"Triple {player2.playerDeckStatsData['HighThree']} beats {player1.playerDeckStatsData['HighThree']}"}
                     pass
                 else:
-                    kicker_winner = self.compareKickers(player1, player2, [player1.playerDeckStatsData['HighThree']] * 3)
+                    kicker_winner = self.compareKickers(player1, player2,
+                                                        [player1.playerDeckStatsData['HighThree']] * 3)
                     if kicker_winner == "Tie":
-                        result = {"winner": "Tie!", "reason": "Same Three of a Kind, better kicker"}
+                        result = {"winner": "Tie!", "reason": "Same Three of a Kind, Same Kickers"}
                     else:
                         result = {"winner": kicker_winner, "reason": f"Triple tie, kicker wins: {kicker_winner}"}
 
@@ -564,9 +635,11 @@ class Game:
                         result = {"winner": player2.playerName, "reason": "Same High Pair, better Lower pair "}
                         pass
                     else:
-                        kicker_winner = self.compareKickers(player1, player2, [player1.playerDeckStatsData['HighPair']] * 2 + [player1.playerDeckStatsData['LowPair']] * 2)
+                        kicker_winner = self.compareKickers(player1, player2,
+                                                            [player1.playerDeckStatsData['HighPair']] * 2 + [
+                                                                player1.playerDeckStatsData['LowPair']] * 2)
                         if kicker_winner == "Tie":
-                            result = {"winner": "Tie!", "reason": "Same Two Pair, better kicker"}
+                            result = {"winner": "Tie!", "reason": "Same Two Pair, Same Kickers"}
                         else:
                             result = {"winner": kicker_winner, "reason": f"Two Pair tie, kicker wins: {kicker_winner}"}
 
@@ -581,9 +654,9 @@ class Game:
                               "reason": f"Pair {player2.playerDeckStatsData['HighPair']} beats {player1.playerDeckStatsData['HighPair']}"}
                     pass
                 else:
-                    kicker_winner = self.compareKickers( player1,player2,[player1.playerDeckStatsData['HighPair']] * 2)
+                    kicker_winner = self.compareKickers(player1, player2, [player1.playerDeckStatsData['HighPair']] * 2)
                     if kicker_winner == "Tie":
-                        result = {"winner": "Tie!", "reason": "Same Pairs, better kicker"}
+                        result = {"winner": "Tie!", "reason": "Same Pairs, Same Kickers"}
                     else:
                         result = {"winner": kicker_winner, "reason": f"Pair tie, kicker wins: {kicker_winner}"}
 
@@ -904,6 +977,7 @@ class Game:
                 return player2.playerName
         return "Tie"
 
+
 # -------------------------------------------------------------# -------------------------------------------------------------
 # -------------------------------------------------------------# -------------------------------------------------------------
 # -------------------------------------------------------------# -------------------------------------------------------------
@@ -919,6 +993,17 @@ Poker.startGameSession()  # Deal pre-flop and give 100 chips each
 human = 1
 computer = 0
 
+# ------------------ PRE-FLOP ------------------
+print("\n=== PRE-FLOP ===")
+print("Table cards:", end=" ")
+for card in Poker.table.tableDeck:
+    print(f"{card.img}({card.value}{card.suit})", end="  ")
+print("\n")
+
+# Win probability before flop
+prob = Poker.estimateWinProbability(human, simulations=2000)
+print(f"David's win probability: {prob['win']*100:.1f}% \n")
+
 # ------------------ FLOP ------------------
 flop_state = Poker.progressRound()  # round = 1 → flop dealt
 print("\n=== FLOP DEALT ===")
@@ -926,6 +1011,10 @@ print("Table cards:", end=" ")
 for card in Poker.table.tableDeck:
     print(f"{card.img}({card.value}{card.suit})", end="  ")
 print("\n")
+
+# Win probability after flop
+prob = Poker.estimateWinProbability(human, simulations=2000)
+print(f"David's win probability: {prob['win']*100:.1f}% \n")
 
 # ------------------ SMALL BET ------------------
 Poker.currentTurn = human
@@ -935,15 +1024,19 @@ print(f"David bets 10 → {bet_result}")
 Poker.currentTurn = computer
 call_result = Poker.call(computer)
 print(f"Computer calls → {call_result}\n")
-
 print(f"Pot after small bet: {Poker.pot.getCurrency()}\n")
 
 # ------------------ TURN ------------------
-print("Turn card added.")
+turn_state = Poker.progressRound()  # round = 2 → turn dealt
+print("=== TURN DEALT ===")
 print("Table now:", end=" ")
 for card in Poker.table.tableDeck:
     print(f"{card.img}({card.value}{card.suit})", end="  ")
 print("\n")
+
+# Win probability after turn
+prob = Poker.estimateWinProbability(human, simulations=1000)
+print(f"David's win probability: {prob['win']*100:.1f}% \n")
 
 # ------------------ ALL-IN ------------------
 Poker.currentTurn = human
@@ -953,27 +1046,17 @@ print(f"David goes ALL-IN → {all_in_result}")
 Poker.currentTurn = computer
 call_result = Poker.call(computer)
 print(f"Computer calls ALL-IN → {call_result}\n")
-
 print(f"Pot after ALL-IN: {Poker.pot.getCurrency()}\n")
 
-# ------------------ RIVER & SHOWDOWN ------------------
-showdown_result = Poker.progressRound()  # This triggers showdown
-final_state = showdown_result['state']   # Extract the inner dict
-
-# ------------------ PRINT RESULTS ------------------
-print("=== FLOP → BET → ALL-IN SHOWDOWN ===\n")
-print("Table cards:", end=" ")
+# ------------------ RIVER ------------------
+river_state = Poker.progressRound()  # round = 3 → river dealt
+print("=== RIVER DEALT ===")
+print("Table now:", end=" ")
 for card in Poker.table.tableDeck:
     print(f"{card.img}({card.value}{card.suit})", end="  ")
 print("\n")
 
-for player in Poker.players:
-    print(f"{player.playerName} cards:", end=" ")
-    for card in player.playerDeck:
-        print(f"{card.img}({card.value}{card.suit})", end="  ")
-    print(f"\nCurrency: {player.playerCurrency.getCurrency()}\n")
-
-print(f"Winner: {final_state['winner']}")
-print(f"Reason: {final_state['reason']}")
-print("Pot Won:", showdown_result['pot_won'])
+# Win probability after river (before showdown)
+prob = Poker.estimateWinProbability(human, simulations=1000)
+print(f"David's win probability: {prob['win']*100:.1f}% \n")
 
